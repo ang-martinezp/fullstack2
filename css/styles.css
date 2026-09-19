@@ -1,0 +1,86 @@
+:root {
+    --color-primario: #0f2b48;       /* Azul marino corporativo LogisTrack */
+    --color-secundario: #1a73e8;     /* Azul interactivo: botones y enlaces */
+    --color-acento: #ff9800;         /* Naranja: alertas, stock crítico, destacados */
+    --color-exito: #198754;          /* Verde: validación conforme */
+    --color-error: #dc3545;          /* Rojo: errores de formulario */
+    --color-fondo: #f8fafc;          /* Fondo general de la página */
+    --fuente-base: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    --transicion-suave: all 0.25s ease-in-out;
+}
+
+body {
+    font-family: var(--fuente-base);
+    background-color: var(--color-fondo);
+    color: #2c3e50;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main { flex: 1; }
+
+/*  Marca y color  */
+.bg-navy { background-color: var(--color-primario) !important; }
+.text-navy { color: var(--color-primario) !important; }
+.bg-accent { background-color: var(--color-acento) !important; }
+.text-accent { color: var(--color-acento) !important; }
+
+.btn-brand {
+    background-color: var(--color-secundario);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    transition: var(--transicion-suave);
+}
+.btn-brand:hover { background-color: #1557b0; color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(26,115,232,.35); }
+
+.btn-accent { background-color: var(--color-acento); color: #fff; font-weight: 600; border: none; transition: var(--transicion-suave); }
+.btn-accent:hover { background-color: #e68900; color: #fff; transform: translateY(-2px); }
+
+/*  Hero banner (Home)  */
+.hero-banner {
+    background: linear-gradient(135deg, var(--color-primario) 0%, #1a365d 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-banner::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(26, 115, 232, 0.15) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/*  Tarjetas de producto / contenido  */
+.card-hover { transition: var(--transicion-suave); border: 1px solid #e2e8f0; border-radius: 10px; }
+.card-hover:hover { transform: translateY(-6px); box-shadow: 0 12px 24px rgba(15,43,72,.12) !important; border-color: var(--color-secundario); }
+.img-card-fit { height: 190px; object-fit: contain; background-color: #eef2f6; padding: 1rem; border-top-left-radius: 9px; border-top-right-radius: 9px; }
+
+/*  Navbar  */
+.navbar-brand { font-weight: 700; letter-spacing: .5px; }
+.nav-link { font-weight: 500; padding: .5rem 1rem !important; border-radius: 6px; transition: var(--transicion-suave); }
+.nav-link.active { background-color: rgba(255,255,255,.18) !important; font-weight: 700 !important; }
+
+/*  Formularios  */
+.form-label { font-weight: 600; color: var(--color-primario); margin-bottom: .35rem; }
+.campo-obligatorio { color: var(--color-error); }
+.form-control:focus, .form-select:focus { border-color: var(--color-secundario); box-shadow: 0 0 0 .25rem rgba(26,115,232,.2); }
+.invalid-feedback { font-size: .85rem; font-weight: 500; }
+
+/*  Stock crítico (panel admin)  */
+.badge-stock-critico { background-color: var(--color-acento) !important; color: #fff; }
+
+/*  Carrito de compras  */
+.carrito-item { border-bottom: 1px solid #e2e8f0; padding-block: .75rem; }
+.carrito-total { font-size: 1.5rem; font-weight: 700; color: var(--color-primario); }
+
+/*  Footer  */
+footer a { color: #cbd5e1; text-decoration: none; transition: var(--transicion-suave); }
+footer a:hover { color: #fff; padding-left: 4px; }
+.footer-copy { background-color: rgba(0,0,0,.25); font-size: .85rem; }
