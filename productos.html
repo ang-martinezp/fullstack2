@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Productos - LogisTrack Store</title>
+    <!-- Framework Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Iconos de Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Hoja de estilos CSS externa personalizada -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-navy shadow-sm sticky-top" aria-label="Navegación principal">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
+                    <span class="fs-4">📦</span>
+                    <div>
+                        <span class="fw-bold d-block lh-1">LogisTrack</span>
+                        <small class="text-secondary" style="font-size: 0.72rem; letter-spacing: 0.5px;">TIENDA ONLINE</small>
+                    </div>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-controls="menuPrincipal" aria-expanded="false" aria-label="Alternar navegación">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="menuPrincipal">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-1">
+                        <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link active" aria-current="page" href="productos.html">Productos</a></li>
+                        <li class="nav-item"><a class="nav-link" href="nosotros.html">Nosotros</a></li>
+                        <li class="nav-item"><a class="nav-link" href="blogs.html">Blogs</a></li>
+                        <li class="nav-item"><a class="nav-link" href="contacto.html">Contacto</a></li>
+                    </ul>
+                    <ul class="navbar-nav ms-lg-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-2">
+                        <li class="nav-item"><a class="nav-link" href="login.html"><i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión</a></li>
+                        <li class="nav-item"><a class="nav-link" href="registro.html">Registrar usuario</a></li>
+                        <li class="nav-item ms-lg-1">
+                            <a href="carrito.html" class="btn btn-outline-light btn-sm d-flex align-items-center gap-2 px-3">
+                                <i class="bi bi-cart3"></i>
+                                <span>Cart (<span id="carrito-contador">0</span>)</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="container my-5">
+
+        <section class="mb-5">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold text-navy">Catálogo de Productos</h2>
+                <p class="text-muted">Tecnología, insumos y mantención para tu empresa.</p>
+            </div>
+
+            <!-- Botones interactivos de filtrado por categoría -->
+            <div class="d-flex justify-content-center flex-wrap gap-2 mb-5">
+                <button type="button" class="btn btn-primary btn-filtro" data-categoria="todos">
+                    <i class="bi bi-grid-fill me-1"></i> Todos
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-filtro" data-categoria="tecnologia">
+                    <i class="bi bi-cpu me-1"></i> Tecnología
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-filtro" data-categoria="insumos">
+                    <i class="bi bi-box me-1"></i> Insumos
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-filtro" data-categoria="mantencion">
+                    <i class="bi bi-tools me-1"></i> Mantención
+                </button>
+            </div>
+
+            <!-- Grilla de Artículos -->
+            <div class="row g-4" id="grilla-articulos">
+
+                <!-- SKU-001-->
+                <article class="col-12 col-md-6 col-lg-4 articulo-producto" data-categoria="tecnologia">
+                    <div class="card h-100 shadow-sm card-hover">
+                        <div class="img-card-fit d-flex align-items-center justify-content-center">
+                            <i class="bi bi-laptop display-3 text-navy"></i>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-navy">Tecnología</span>
+                                <small class="text-muted">SKU-001</small>
+                            </div>
+                            <h3 class="card-title h5 fw-bold text-navy">Laptop DELL Latitude</h3>
+                            <p class="card-text text-muted small flex-grow-1">Laptop Office 14 pulgadas.</p>
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
+                                <span class="fs-4 fw-bold text-navy">$389.990</span>
+                                <a href="detalle-producto.html?sku=SKU-001" class="btn btn-brand btn-sm px-3">
+                                    Ver detalle <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- SKU-002-->
+                <article class="col-12 col-md-6 col-lg-4 articulo-producto" data-categoria="tecnologia">
+                    <div class="card h-100 shadow-sm card-hover">
+                        <div class="img-card-fit d-flex align-items-center justify-content-center">
+                            <i class="bi bi-keyboard display-3 text-navy"></i>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-navy">Tecnología</span>
+                                <small class="text-muted">SKU-002</small>
+                            </div>
+                            <h3 class="card-title h5 fw-bold text-navy">Teclado Kumara USB</h3>
+                            <p class="card-text text-muted small flex-grow-1">Teclado mecánico USB.</p>
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
+                                <span class="fs-4 fw-bold text-navy">$14.990</span>
+                                <a href="detalle-producto.html?sku=SKU-002" class="btn btn-brand btn-sm px-3">
+                                    Ver detalle <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- SKU-003-->
+                <article class="col-12 col-md-6 col-lg-4 articulo-producto" data-categoria="mantencion">
+                    <div class="card h-100 shadow-sm card-hover">
+                        <div class="img-card-fit d-flex align-items-center justify-content-center">
+                            <i class="bi bi-cpu-fill display-3 text-navy"></i>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-navy">Mantencion</span>
+                                <small class="text-muted">SKU-003</small>
+                            </div>
+                            <h3 class="card-title h5 fw-bold text-navy">Pasta Térmica Artic MX4</h3>
+                            <p class="card-text text-muted small flex-grow-1">Pasta térmica para repuesto.</p>
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
+                                <span class="fs-4 fw-bold text-navy">$5.990</span>
+                                <a href="detalle-producto.html?sku=SKU-003" class="btn btn-brand btn-sm px-3">
+                                    Ver detalle <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- SKU-004-->
+                <article class="col-12 col-md-6 col-lg-4 articulo-producto" data-categoria="insumos">
+                    <div class="card h-100 shadow-sm card-hover">
+                        <div class="img-card-fit d-flex align-items-center justify-content-center">
+                            <i class="bi bi-file-earmark-text display-3 text-navy"></i>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-navy">Insumos</span>
+                                <small class="text-muted">SKU-004</small>
+                            </div>
+                            <h3 class="card-title h5 fw-bold text-navy">Papel A4 Resma</h3>
+                            <p class="card-text text-muted small flex-grow-1">Resma 500 hojas 75g.</p>
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
+                                <span class="fs-4 fw-bold text-navy">$3.490</span>
+                                <a href="detalle-producto.html?sku=SKU-004" class="btn btn-brand btn-sm px-3">
+                                    Ver detalle <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- SKU-005 -->
+                <article class="col-12 col-md-6 col-lg-4 articulo-producto" data-categoria="mantencion">
+                    <div class="card h-100 shadow-sm card-hover">
+                        <div class="img-card-fit d-flex align-items-center justify-content-center">
+                            <i class="bi bi-droplet-half display-3 text-navy"></i>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-navy">Mantención</span>
+                                <small class="text-muted">SKU-005</small>
+                            </div>
+                            <h3 class="card-title h5 fw-bold text-navy">Líquido Refrigerante Gamer</h3>
+                            <p class="card-text text-muted small flex-grow-1">Líquido desmineralizado para refrigeraciones líquidas.</p>
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
+                                <span class="fs-4 fw-bold text-navy">$6.990</span>
+                                <a href="detalle-producto.html?sku=SKU-005" class="btn btn-brand btn-sm px-3">
+                                    Ver detalle <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER — LogisTrack Store -->
+    <footer class="bg-navy text-light pt-5 mt-auto">
+        <div class="container pb-4">
+            <div class="row g-4">
+
+                <div class="col-lg-4 col-md-6">
+                    <h4 class="h5 fw-bold text-white mb-3">Sobre LogisTrack</h4>
+                    <p class="text-secondary small">
+                        Tienda online y panel de gestión conectados conceptualmente con los microservicios de
+                        LogisTrack (auth-service, product-service, order-service).
+                    </p>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <h4 class="h5 fw-bold text-white mb-3">Navegación Rápida</h4>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="index.html"><i class="bi bi-chevron-right me-1"></i>Home</a></li>
+                        <li class="mb-2"><a href="productos.html"><i class="bi bi-chevron-right me-1"></i>Productos</a></li>
+                        <li class="mb-2"><a href="nosotros.html"><i class="bi bi-chevron-right me-1"></i>Nosotros</a></li>
+                        <li class="mb-2"><a href="blogs.html"><i class="bi bi-chevron-right me-1"></i>Blogs</a></li>
+                        <li class="mb-2"><a href="contacto.html"><i class="bi bi-chevron-right me-1"></i>Contacto</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-4 col-md-12">
+                    <h4 class="h5 fw-bold text-white mb-3">Contacto</h4>
+                    <p class="text-secondary small mb-1"><i class="bi bi-telephone me-2"></i>+56 2 2345 6789</p>
+                    <p class="text-secondary small mb-1"><i class="bi bi-envelope me-2"></i>contacto@logistrack.cl</p>
+                    <p class="text-secondary small"><i class="bi bi-clock me-2"></i>Lunes a Viernes 08:30 - 18:30 hrs</p>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="footer-copy py-3 text-center text-secondary border-top border-secondary border-opacity-25">
+            <div class="container">
+                <small>
+                    Evaluación Parcial N° 1 - DSY1104 Desarrollo FullStack II |
+                    Equipo: <strong>Alfredo De La Hoz</strong>, <strong>Angel Martinez</strong> y <strong>Oliver Duncan</strong> | Duoc UC 2026
+                </small>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5.3 Bundle JS con Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Script personalizado -->
+    <script src="js/main.js"></script>
+</body>
+</html>
