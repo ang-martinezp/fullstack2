@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mantenedor de Productos - LogisTrack</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Estilos del Proyecto -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div class="admin-wrapper">
+    <!-- Menú Lateral (Sidebar) -->
+    <aside class="admin-sidebar shadow-sm">
+      <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+        <i class="bi bi-box-seam-fill fs-3 text-warning"></i>
+        <div>
+          <h5 class="m-0 fw-bold lh-1 text-white">LogisTrack</h5>
+          <small class="text-white-50">Panel de Control</small>
+        </div>
+      </div>
+
+      <nav class="nav flex-column mt-3 flex-grow-1">
+        <a class="nav-link" href="admin-home.html">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        <a class="nav-link active" href="admin-productos.html" id="nav-productos">
+          <i class="bi bi-boxes"></i> Productos
+        </a>
+        <a class="nav-link" href="admin-home.html#seccion-ordenes" id="nav-ordenes">
+          <i class="bi bi-receipt"></i> Órdenes
+        </a>
+        <a class="nav-link" href="admin-usuarios.html" id="nav-usuarios">
+          <i class="bi bi-people"></i> Usuarios
+        </a>
+      </nav>
+
+      <div class="p-3 border-top border-secondary border-opacity-25">
+        <a href="index.html" class="btn btn-outline-light w-100 btn-sm d-flex align-items-center justify-content-center gap-2">
+          <i class="bi bi-shop"></i> Ir a la Tienda
+        </a>
+      </div>
+    </aside>
+
+    <!-- Área Principal de Contenido -->
+    <main class="admin-content d-flex flex-column justify-content-between">
+      <div>
+        <!-- Topbar con selector de perfil -->
+        <header class="admin-topbar d-flex justify-content-between align-items-center">
+          <div>
+            <h4 class="m-0 fw-bold text-dark">Mantenedor de Productos</h4>
+            <small class="text-muted">Gestión de catálogo, existencias y control de stock</small>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-dark border">Rol activo:</span>
+            <select id="select-rol-simulado" class="form-select form-select-sm" style="width: 150px;">
+              <option value="Administrador">Administrador</option>
+              <option value="Vendedor">Vendedor</option>
+              <option value="Cliente">Cliente</option>
+            </select>
+          </div>
+        </header>
+
+        <div class="container-fluid p-4">
+          <!-- Alerta informativa de rol -->
+          <div id="alerta-rol" class="alert alert-info py-2 small d-none" role="alert"></div>
+
+          <!-- Barra de Acciones: Buscador en tiempo real y Botón Nuevo Producto -->
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <div class="d-flex gap-2 flex-grow-1" style="max-width: 480px;">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                  <i class="bi bi-search text-muted"></i>
+                </span>
+                <input 
+                  type="text" 
+                  id="input-filtro" 
+                  class="form-control border-start-0" 
+                  placeholder="Buscar por código, nombre o categoría..."
+                >
+              </div>
+            </div>
+            
+            <a href="admin-producto-form.html" class="btn btn-primary d-inline-flex align-items-center gap-2">
+              <i class="bi bi-plus-circle"></i> Nuevo Producto
+            </a>
+          </div>
+
+          <!-- Tarjeta con la Tabla de Inventario -->
+          <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+              <h6 class="fw-bold text-dark m-0">
+                Inventario Registrado (<span id="total-registros">0</span>)
+              </h6>
+              <div class="small text-muted">
+                <span class="badge bg-warning text-dark me-1">
+                  <i class="bi bi-exclamation-triangle-fill"></i>
+                </span> Stock Crítico (Stock &le; Mínimo)
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="ps-3">Código</th>
+                      <th>Producto</th>
+                      <th>Categoría</th>
+                      <th class="text-end">Precio</th>
+                      <th class="text-center">Stock</th>
+                      <th class="text-center">Stock Crítico</th>
+                      <th class="text-center">Estado</th>
+                      <th class="pe-3 text-end">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabla-productos-cuerpo">
+                    <!-- Filas inyectadas dinámicamente -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer Duoc UC 2026 -->
+      <footer class="footer-copy py-3 text-center text-secondary border-top bg-white mt-4">
+        <div class="container-fluid">
+          <small>
+            Evaluación Parcial N° 1 | DSY1104 Desarrollo FullStack II |
+            Equipo: <strong>Alfredo De La Hoz</strong>, <strong>Angel Martinez</strong> y <strong>Oliver Duncan</strong> | Duoc UC 2026
+          </small>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Inicialización de respaldo si el usuario entra directo a esta pantalla
+    function inicializarCatalogo() {
+      // Lista completa sincronizada con productos.html
+      const catalogoCompleto = [
+        { codigo: 'SKU-001', nombre: 'Laptop DELL Latitude', categoria: 'Tecnología', descripcion: 'Laptop Office 14 pulgadas.', precio: 389990, stock: 8, stockCritico: 3 },
+        { codigo: 'SKU-002', nombre: 'Teclado Kumara USB', categoria: 'Tecnología', descripcion: 'Teclado mecánico USB.', precio: 149990, stock: 15, stockCritico: 5 },
+        { codigo: 'SKU-003', nombre: 'Pasta Térmica Artic MX4', categoria: 'Mantención', descripcion: 'Pasta térmica para repuesto.', precio: 5990, stock: 2, stockCritico: 5 },
+        { codigo: 'SKU-004', nombre: 'Papel A4 Resma', categoria: 'Insumos', descripcion: 'Resma 500 hojas 75g.', precio: 3490, stock: 25, stockCritico: 10 },
+        { codigo: 'SKU-005', nombre: 'Líquido Refrigerante Gamer', categoria: 'Mantención', descripcion: 'Líquido desmineralizado para refrigeraciones líquidas.', precio: 6990, stock: 12, stockCritico: 4 },
+        { codigo: 'SKU-006', nombre: 'Set destornilladores Bauker 25 en 1', categoria: 'Mantención', descripcion: 'Set de destornilladores 25 en 1 de Cromo Vanadio Acero', precio: 5990, stock: 1, stockCritico: 3 },
+        { codigo: 'SKU-007', nombre: 'Memoria RAM DDR4 16GB Kingston Fury', categoria: 'Tecnología', descripcion: 'Kingston FURY Beast DDR4 de 16GB 3600MHz.', precio: 305990, stock: 6, stockCritico: 2 },
+        { codigo: 'SKU-008', nombre: 'Unidad SSD Kingston 240GB', categoria: 'Tecnología', descripcion: 'Unidad SSD Kingston A400, 240GB, 2.5", SATA3.', precio: 64990, stock: 9, stockCritico: 3 },
+        { codigo: 'SKU-009', nombre: 'Cable HDMI Xtech', categoria: 'Tecnología', descripcion: 'Cable HDMI Xtech 1.8mts.', precio: 6990, stock: 18, stockCritico: 5 }
+      ];
+
+      // Si no existe o tiene solo la versión reducida previa, cargamos los 9 productos
+      const productosGuardados = JSON.parse(localStorage.getItem('logistrack_productos')) || [];
+      if (productosGuardados.length < 9) {
+        localStorage.setItem('logistrack_productos', JSON.stringify(catalogoCompleto));
+      }
+    }
+
+    inicializarCatalogo();
+
+    // Desbloqueo rápido de evaluación (?reset=admin)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('reset') === 'admin') {
+      localStorage.setItem('logistrack_rol_activo', 'Administrador');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // Elementos del DOM
+    const selectRol = document.getElementById('select-rol-simulado');
+    const navUsuarios = document.getElementById('nav-usuarios');
+    const alertaRol = document.getElementById('alerta-rol');
+    const tablaCuerpo = document.getElementById('tabla-productos-cuerpo');
+    const totalRegistros = document.getElementById('total-registros');
+    const inputFiltro = document.getElementById('input-filtro');
+
+    // Gestión de Roles y Permisos
+    let rolActual = localStorage.getItem('logistrack_rol_activo') || 'Administrador';
+    selectRol.value = rolActual;
+    aplicarPermisos(rolActual);
+
+    selectRol.addEventListener('change', (e) => {
+      rolActual = e.target.value;
+      localStorage.setItem('logistrack_rol_activo', rolActual);
+      aplicarPermisos(rolActual);
+    });
+
+    function aplicarPermisos(rol) {
+      if (rol === 'Cliente') {
+        alert('Acceso Denegado: Los usuarios con perfil "Cliente" no tienen acceso al panel administrativo.');
+        window.location.href = 'index.html';
+        return;
+      }
+      if (rol === 'Vendedor') {
+        navUsuarios.classList.add('d-none');
+        alertaRol.textContent = 'Modo Vendedor: Tienes acceso al catálogo y existencias de productos.';
+        alertaRol.classList.remove('d-none');
+      } else {
+        navUsuarios.classList.remove('d-none');
+        alertaRol.classList.add('d-none');
+      }
+    }
+
+    // Obtener productos desde localStorage
+    function leerProductos() {
+      return JSON.parse(localStorage.getItem('logistrack_productos')) || [];
+    }
+
+    // Renderizar la tabla con filtrado reactivo
+    function renderizarTabla(termino = '') {
+      const productos = leerProductos();
+      const filtro = termino.trim().toLowerCase();
+
+      const filtrados = productos.filter(p => 
+        (p.codigo && p.codigo.toLowerCase().includes(filtro)) ||
+        (p.nombre && p.nombre.toLowerCase().includes(filtro)) ||
+        (p.categoria && p.categoria.toLowerCase().includes(filtro))
+      );
+
+      totalRegistros.textContent = filtrados.length;
+
+      if (filtrados.length === 0) {
+        tablaCuerpo.innerHTML = `
+          <tr>
+            <td colspan="8" class="text-center py-5 text-muted">
+              <i class="bi bi-search fs-1 d-block text-secondary mb-2"></i>
+              No se encontraron productos que coincidan con la búsqueda.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tablaCuerpo.innerHTML = filtrados.map(p => {
+        const stockActual = Number(p.stock);
+        const stockCritico = Number(p.stockCritico || 0);
+        const esCritico = stockActual <= stockCritico;
+
+        return `
+          <tr>
+            <td class="ps-3 fw-semibold text-secondary">${p.codigo}</td>
+            <td>
+              <div class="fw-bold">${p.nombre}</div>
+              <small class="text-muted">${p.descripcion || 'Sin descripción adicional'}</small>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">${p.categoria}</span>
+            </td>
+            <td class="text-end fw-bold">$${Number(p.precio).toLocaleString('es-CL')}</td>
+            <td class="text-center fw-bold ${esCritico ? 'text-danger' : 'text-dark'}">${stockActual}</td>
+            <td class="text-center text-muted">${stockCritico}</td>
+            <td class="text-center">
+              ${esCritico 
+                ? '<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle-fill me-1"></i>Crítico</span>' 
+                : '<span class="badge bg-success">Normal</span>'}
+            </td>
+            <td class="pe-3 text-end">
+              <div class="btn-group btn-group-sm">
+                <a href="admin-producto-form.html?codigo=${encodeURIComponent(p.codigo)}" class="btn btn-outline-secondary" title="Editar producto">
+                  <i class="bi bi-pencil-square"></i>
+                </a>
+                <button type="button" class="btn btn-outline-danger" onclick="eliminarProducto('${p.codigo}')" title="Eliminar producto">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Eliminar producto por código
+    window.eliminarProducto = function(codigo) {
+      if (confirm(`¿Estás seguro de que deseas eliminar el producto con código "${codigo}"?`)) {
+        let productos = leerProductos();
+        productos = productos.filter(p => p.codigo !== codigo);
+        localStorage.setItem('logistrack_productos', JSON.stringify(productos));
+        renderizarTabla(inputFiltro.value);
+      }
+    };
+
+    // Evento de búsqueda en tiempo real
+    inputFiltro.addEventListener('input', (e) => {
+      renderizarTabla(e.target.value);
+    });
+
+    // Carga inicial
+    renderizarTabla();
+  </script>
+</body>
+</html>
