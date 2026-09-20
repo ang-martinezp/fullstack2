@@ -38,6 +38,38 @@ const CATALOGO_PRODUCTOS = [
         categoriaLabel: 'Mantención',
         precio: 6990,
         icono: 'bi-droplet-half'
+    },
+    {
+        sku: 'SKU-006',
+        nombre: 'Set destornilladores Bauker 25 en 1',
+        descripcion: 'Set de destornilladores 25 en 1 de Cromo Vanadio Acero.',
+        categoriaLabel: 'Mantención',
+        precio: 5990,
+        icono: 'bi-screwdriver'
+    },
+    {
+        sku: 'SKU-007',
+        nombre: 'Memoria RAM DDR4 16GB Kingston Fury',
+        descripcion: 'Kingston FURY Beast DDR4 de 16GB 3600MHz.',
+        categoriaLabel: 'Tecnología',
+        precio: 305990,
+        icono: 'bi-memory'
+    },
+    {
+        sku: 'SKU-008',
+        nombre: 'Unidad SSD Kingston 240GB',
+        descripcion: 'Unidad SSD Kingston A400, 240GB, 2.5", SATA3.',
+        categoriaLabel: 'Tecnología',
+        precio: 64990,
+        icono: 'bi-device-ssd'
+    },
+    {   
+        sku: 'SKU-009',
+        nombre: 'Cable HDMI Xtech',
+        descripcion: 'Cable HDMI Xtech 1.8mts.',
+        categoriaLabel: 'Tecnología',
+        precio: 6990,
+        icono: 'bi-hdmi'
     }
 ];
 
