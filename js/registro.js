@@ -1,8 +1,6 @@
 /**
  * registro.js
- * Controlador para la pantalla de registro de usuario
- * Evaluación Parcial N° 1 - DSY1104 Desarrollo FullStack II
- * Bloque: Cuentas · Formularios (Alfredo De La Hoz)
+ * registro de usuario
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,12 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkTerminos = document.getElementById('regTerminos');
     const alertaBox = document.getElementById('registroAlerta');
 
-    // 1. Inicializar selects encadenados Región -> Comuna
+    // sirve para inicializar selects encadenados región -> comuna
     if (typeof configurarSelectsRegionComuna === 'function') {
         configurarSelectsRegionComuna(selectRegion, selectComuna);
     }
 
-    // 2. Alternar visibilidad de contraseñas
+    // alternar visibilidad de contraseñas
     const btnToggleClave = document.getElementById('btnToggleRegClave');
     const iconoToggleClave = document.getElementById('iconoRegClave');
     if (btnToggleClave && inputClave && iconoToggleClave) {
@@ -45,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. Validaciones individuales
+    // validaciones individuales
     function validarRun() {
         const valor = (inputRun.value || '').trim();
         if (!valor) {
@@ -53,12 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
         if (!esRunValido(valor)) {
-            marcarInvalido(inputRun, 'Debe ingresar un RUN válido con dígito verificador correcto (ej: 12.345.678-5).');
+            marcarInvalido(inputRun, 'Debe ingresar el RUN en formato xxxxxxxx-x (sin puntos y con guion, ej: 12345678-5).');
             return false;
         }
-        // Si es válido, formatear visualmente
+        // si es válido se formatea visualmente
         inputRun.value = formatearRun(valor);
-        marcarValido(inputRun, 'RUN válido y verificado.');
+        marcarValido(inputRun, 'RUN válido.');
         return true;
     }
 
@@ -68,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             marcarInvalido(input, `El campo ${campoNombre} es obligatorio.`);
             return false;
         }
-        // Solo letras, espacios, tildes y ñ
+        // solo letras
         const patronTexto = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,50}$/;
         if (!patronTexto.test(valor) || valor.length < minLargo) {
             marcarInvalido(input, `Ingrese un ${campoNombre} válido (mínimo ${minLargo} letras, sin números).`);
@@ -89,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
 
-        // Verificar si ya está registrado en localStorage
+        // verifica si esta en localstorage
         const usuariosGuardados = JSON.parse(localStorage.getItem('logistrack_usuarios') || '[]');
         const yaExiste = usuariosGuardados.some(u => u.correo.toLowerCase() === valor.toLowerCase());
         if (yaExiste) {
@@ -113,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         marcarValido(inputClave);
 
-        // Si ya hay confirmación ingresada, revalidarla
+        // si hay confirmacion ingresada, revalidarla
         if (inputConfirmarClave.value) {
             validarConfirmarClave();
         }
@@ -168,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    // 4. Asignación de listeners
+    // asignación de listeners
     inputRun.addEventListener('blur', validarRun);
     inputNombre.addEventListener('blur', () => validarTexto(inputNombre, 'nombre'));
     inputApellidos.addEventListener('blur', () => validarTexto(inputApellidos, 'apellidos'));
@@ -180,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
     inputDireccion.addEventListener('blur', validarDireccion);
     checkTerminos.addEventListener('change', validarTerminos);
 
-    // 5. Envío del formulario
+    // envío del formulario
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -195,15 +193,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const vDireccion = validarDireccion();
         const vTerminos = validarTerminos();
 
-        const formularioValido = vRun && vNombre && vApellidos && vCorreo && vClave && 
-                                 vConfirmar && vRegion && vComuna && vDireccion && vTerminos;
+        const formularioValido = vRun && vNombre && vApellidos && vCorreo && vClave &&
+            vConfirmar && vRegion && vComuna && vDireccion && vTerminos;
 
         if (!formularioValido) {
             mostrarAlerta('Por favor revise los campos destacados con errores antes de continuar.', 'danger');
             return;
         }
 
-        // Construir objeto de usuario con la misma estructura del admin
+        // objeto de usuario con la misma estructura del admin
         const nuevoUsuario = {
             id: 'USR-' + Date.now(),
             run: inputRun.value.trim(),
@@ -218,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fechaRegistro: new Date().toLocaleDateString('es-CL')
         };
 
-        // Guardar en localStorage para que Oliver Duncan pueda leerlo en el mantenedor de usuarios
+        // guardar en localstorage para q se lea en el mantenedor
         const usuarios = JSON.parse(localStorage.getItem('logistrack_usuarios') || '[]');
         usuarios.push(nuevoUsuario);
         localStorage.setItem('logistrack_usuarios', JSON.stringify(usuarios));

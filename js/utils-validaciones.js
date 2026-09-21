@@ -1,13 +1,10 @@
 /**
  * utils-validaciones.js
- * Funciones de validación obligatorias para LogisTrack Store
- * Evaluación Parcial N° 1 - DSY1104 Desarrollo FullStack II
- * Bloque: Cuentas · Formularios (Alfredo De La Hoz)
+ * funciones de validacion
  */
 
 /**
- * Valida que el correo pertenezca exclusivamente a los dominios institucionales o gmail permitidos:
- * @duoc.cl, @profesor.duoc.cl o @gmail.com
+ * valida que el correo sea institucional
  * @param {string} valor 
  * @returns {boolean}
  */
@@ -27,33 +24,38 @@ function esClaveValida(valor) {
 }
 
 /**
- * Valida un RUN chileno incluyendo formato y cálculo matemático del dígito verificador (Módulo 11).
- * Acepta formatos: "12345678-5", "12.345.678-5", "123456785", etc.
+ * valida que el run se ingrese en formato obligatorio "xxxxxxxx-x" 
  * @param {string} valor 
  * @returns {boolean}
  */
 function esRunValido(valor) {
     if (!valor || typeof valor !== 'string') return false;
 
-    // Limpiar puntos, guiones y espacios
-    const limpio = valor.replace(/[\.\-\s]/g, '').trim().toUpperCase();
+    const run = valor.trim();
 
-    // Debe tener al menos 8 caracteres (7 de cuerpo + 1 DV) y máximo 9 (8 cuerpo + 1 DV)
-    if (limpio.length < 8 || limpio.length > 9) return false;
+    if (run.includes('.')) {
+        return false;
+    }
 
-    const cuerpo = limpio.slice(0, -1);
-    const dvIngresado = limpio.slice(-1);
+    if (!run.includes('-')) {
+        return false;
+    }
 
-    // El cuerpo debe contener solo dígitos
-    if (!/^\d+$/.test(cuerpo)) return false;
+    const patron = /^\d{7,8}-[\dkK]$/;
+    if (!patron.test(run)) {
+        return false;
+    }
+    const partes = run.toUpperCase().split('-');
+    const cuerpo = partes[0];
+    const dvIngresado = partes[1];
 
-    // Cálculo del Dígito Verificador usando Módulo 11
+    // calculo del digito verificador mediante formula 11
     let suma = 0;
-    let multiplicador = 2;
+    let multiplo = 2;
 
     for (let i = cuerpo.length - 1; i >= 0; i--) {
-        suma += parseInt(cuerpo.charAt(i), 10) * multiplicador;
-        multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+        suma += parseInt(cuerpo[i], 10) * multiplo;
+        multiplo = multiplo < 7 ? multiplo + 1 : 2;
     }
 
     const resto = 11 - (suma % 11);
@@ -71,28 +73,16 @@ function esRunValido(valor) {
 }
 
 /**
- * Da formato estándar XX.XXX.XXX-X a un RUN chileno.
  * @param {string} valor 
  * @returns {string}
  */
 function formatearRun(valor) {
     if (!valor) return '';
-    let limpio = valor.replace(/[^0-9kK]/g, '').toUpperCase();
-    if (limpio.length === 0) return '';
-
-    const dv = limpio.slice(-1);
-    let cuerpo = limpio.slice(0, -1);
-
-    if (cuerpo.length === 0) return dv;
-
-    // Aplicar puntos de miles al cuerpo
-    cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return `${cuerpo}-${dv}`;
+    return valor.trim().toUpperCase();
 }
 
 /**
- * Valida un precio (número decimal o entero mayor o igual a 0).
- * Helper para mantenedor de productos (Oliver Duncan).
+ * Valida un precio, tiene q ser numero entero
  * @param {number|string} valor 
  * @returns {boolean}
  */
@@ -103,8 +93,7 @@ function esPrecioValido(valor) {
 }
 
 /**
- * Valida un stock (número entero mayor o igual a 0).
- * Helper para mantenedor de productos (Oliver Duncan).
+ * valida que el stock sea un numero entero 
  * @param {number|string} valor 
  * @returns {boolean}
  */
@@ -115,8 +104,7 @@ function esStockValido(valor) {
 }
 
 /**
- * Valida que el stock crítico sea un entero mayor o igual a 0.
- * Helper para mantenedor de productos (Oliver Duncan).
+ * valida que el stock sea un numero entero 
  * @param {number|string} valor 
  * @returns {boolean}
  */
@@ -127,7 +115,6 @@ function esStockCriticoValido(valor) {
 }
 
 /**
- * Marca un elemento de formulario como válido según clases Bootstrap 5.
  * @param {HTMLElement} inputElement 
  * @param {string} [mensajeValido]
  */
@@ -143,7 +130,6 @@ function marcarValido(inputElement, mensajeValido = '') {
 }
 
 /**
- * Marca un elemento de formulario como inválido según clases Bootstrap 5.
  * @param {HTMLElement} inputElement 
  * @param {string} mensajeError 
  */
@@ -159,7 +145,6 @@ function marcarInvalido(inputElement, mensajeError = '') {
 }
 
 /**
- * Limpia el estado de validación de un elemento de formulario.
  * @param {HTMLElement} inputElement 
  */
 function limpiarValidacion(inputElement) {
@@ -167,7 +152,7 @@ function limpiarValidacion(inputElement) {
     inputElement.classList.remove('is-valid', 'is-invalid');
 }
 
-// Exponer en objeto window si está en entorno navegador
+// expongo en objeto window si esta en entorno navegador
 if (typeof window !== 'undefined') {
     window.esCorreoInstitucionalValido = esCorreoInstitucionalValido;
     window.esClaveValida = esClaveValida;

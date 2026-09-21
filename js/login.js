@@ -1,8 +1,6 @@
 /**
  * login.js
- * Controlador para la pantalla de inicio de sesión
- * Evaluación Parcial N° 1 - DSY1104 Desarrollo FullStack II
- * Bloque: Cuentas · Formularios (Alfredo De La Hoz)
+ * inicio de sesión
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const iconoToggleClave = document.getElementById('iconoToggleClave');
     const alertaBox = document.getElementById('loginAlerta');
 
-    // 1. Alternar visibilidad de contraseña
     if (btnToggleClave && inputClave && iconoToggleClave) {
         btnToggleClave.addEventListener('click', () => {
             const esPassword = inputClave.getAttribute('type') === 'password';
@@ -22,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. Validación de Correo en tiempo real (blur y input)
+    // validacion de correo en tiempo real
     function validarCampoCorreo() {
         const valor = (inputCorreo.value || '').trim();
         if (!valor) {
@@ -37,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    // 3. Validación de Contraseña en tiempo real
+    // validacion de contraseña en tiempo real
     function validarCampoClave() {
         const valor = inputClave.value || '';
         if (!valor) {
@@ -66,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 4. Envío del formulario
+    // envio del formulario
     formLogin.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -81,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const correo = inputCorreo.value.trim().toLowerCase();
         const clave = inputClave.value;
 
-        // Verificar si existe en usuarios registrados en localStorage
+        // verificar si existe en usuarios registrados en localStorage
         const usuariosGuardados = JSON.parse(localStorage.getItem('logistrack_usuarios') || '[]');
         const usuarioEncontrado = usuariosGuardados.find(u => u.correo.toLowerCase() === correo);
 
@@ -92,10 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Inicio de sesión exitoso con usuario registrado
+            // inicio de sesión exitoso con usuario registrado
             iniciarSesion(usuarioEncontrado);
         } else {
-            // Usuarios demo por defecto para facilitar pruebas y defensa
+            // usuarios demo 
             const usuariosDemo = [
                 { correo: 'admin@duoc.cl', clave: 'admin123', nombre: 'Oliver', apellidos: 'Duncan', rol: 'Administrador' },
                 { correo: 'vendedor@duoc.cl', clave: 'vend1234', nombre: 'Angel', apellidos: 'Martinez', rol: 'Vendedor' },
@@ -114,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 iniciarSesion(demoEncontrado);
             } else {
-                // Si es un correo válido con formato institucional/gmail pero no está previamente registrado,
+                // Si es un correo válido con formato institucional/gmail pero no está previamente registrado
                 // simulamos el acceso como nuevo cliente
                 const nuevoCliente = {
                     correo: correo,
@@ -136,8 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
 
         mostrarAlerta(`¡Bienvenido/a, ${usuario.nombre || usuario.correo}! Redirigiendo a la tienda...`, 'success');
-        
-        // Deshabilitar botón mientras redirige
+
+        // deshabilita el botón mientras redirige
         const btnSubmit = document.getElementById('btnSubmitLogin');
         if (btnSubmit) {
             btnSubmit.disabled = true;
@@ -159,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alertaBox.classList.remove('d-none');
     }
 
-    // Manejo de modal de recuperación
+    // manejo de recuperación
     const btnEnviarRecuperacion = document.getElementById('btnEnviarRecuperacion');
     const recuperarCorreo = document.getElementById('recuperarCorreo');
     if (btnEnviarRecuperacion && recuperarCorreo) {

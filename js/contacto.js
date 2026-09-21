@@ -1,8 +1,6 @@
 /**
  * contacto.js
- * Controlador para la pantalla de contacto
- * Evaluación Parcial N° 1 - DSY1104 Desarrollo FullStack II
- * Bloque: Cuentas · Formularios (Alfredo De La Hoz)
+ * pantalla de contacto
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const contadorComentario = document.getElementById('contadorComentario');
     const alertaBox = document.getElementById('contactoAlerta');
 
-    // 1. Contador dinámico de caracteres en tiempo real (hasta 500 caracteres)
+    // contador de caracteres en tiempo real para le limite de 500
     if (textComentario && contadorComentario) {
         textComentario.addEventListener('input', () => {
             const largo = textComentario.value.length;
@@ -35,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. Validaciones individuales
+    // validaciones individuales
     function validarNombre() {
         const valor = (inputNombre.value || '').trim();
         if (!valor) {
@@ -67,12 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validarTelefono() {
         const valor = (inputTelefono.value || '').trim();
-        // Teléfono es opcional
+        // ojo el telefono es opcional
         if (!valor) {
             limpiarValidacion(inputTelefono);
             return true;
         }
-        // Validar formato chileno si se ingresa: ej. +56 9 1234 5678, +56912345678 o 912345678
+        // validar formato chileno si se ingresa: ej. +56 9 1234 5678, +56912345678 o 912345678
         const patronTelefono = /^(\+?56\s?)?(\d{1,2}\s?)?\d{7,9}$/;
         if (!patronTelefono.test(valor.replace(/\s+/g, ''))) {
             marcarInvalido(inputTelefono, 'Formato telefónico inválido (ej: +56 9 1234 5678 o 912345678).');
@@ -110,14 +108,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    // 3. Listeners en blur / input
+    // listeners en blur y input
     inputNombre.addEventListener('blur', validarNombre);
     inputCorreo.addEventListener('blur', validarCorreo);
     inputTelefono.addEventListener('blur', validarTelefono);
     selectAsunto.addEventListener('change', validarAsunto);
     textComentario.addEventListener('blur', validarComentario);
 
-    // 4. Envío del formulario
+    // envio del formulario
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -134,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Guardar mensaje de contacto simulado en localStorage
+        // guardamos el mensaje de contacto en localStorage
         const mensajesGuardados = JSON.parse(localStorage.getItem('logistrack_mensajes_contacto') || '[]');
         const nuevoMensaje = {
             id: 'MSG-' + Date.now(),
@@ -148,9 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
         mensajesGuardados.push(nuevoMensaje);
         localStorage.setItem('logistrack_mensajes_contacto', JSON.stringify(mensajesGuardados));
 
-        // Feedback positivo y limpieza
+        // feedback positivo y limpieza del formulario
         mostrarAlerta(`¡Gracias por contactarnos, ${nuevoMensaje.nombre}! Tu mensaje ha sido recibido con el folio <strong>${nuevoMensaje.id}</strong>. Responderemos a <em>${nuevoMensaje.correo}</em> a la brevedad.`, 'success');
-        
+
         form.reset();
         limpiarValidacion(inputNombre);
         limpiarValidacion(inputCorreo);
