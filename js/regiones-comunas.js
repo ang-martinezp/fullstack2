@@ -1,10 +1,5 @@
 /**
  * regiones-comunas.js
- * Arreglo JS compartido de regiones y comunas de Chile
- * Evaluación Parcial N° 1 - DSY1104 Desarrollo FullStack II
- * Bloque: Cuentas · Formularios (Alfredo De La Hoz)
- * 
- * Reutilizable tanto en el registro de clientes como en el mantenedor de usuarios del panel administrador.
  */
 
 const REGIONES_Y_COMUNAS = [
@@ -84,7 +79,6 @@ const REGIONES_Y_COMUNAS = [
 ];
 
 /**
- * Obtiene la lista con los nombres de todas las regiones disponibles.
  * @returns {string[]}
  */
 function obtenerNombresRegiones() {
@@ -92,7 +86,6 @@ function obtenerNombresRegiones() {
 }
 
 /**
- * Retorna las comunas pertenecientes a la región dada.
  * @param {string} nombreRegion 
  * @returns {string[]}
  */
@@ -104,13 +97,12 @@ function obtenerComunasPorRegion(nombreRegion) {
 }
 
 /**
- * Configura y vincula dinámicamente dos elementos select (Región y Comuna).
- * Al cambiar de región, se vacía y repuebla automáticamente el select de comunas.
+ * configura y vincula dos elementos select (Region y Comuna)
  * 
- * @param {HTMLSelectElement|string} selectRegion - Elemento select o su ID
- * @param {HTMLSelectElement|string} selectComuna - Elemento select o su ID
- * @param {string} [regionInicial=""] - Región preseleccionada (opcional)
- * @param {string} [comunaInicial=""] - Comuna preseleccionada (opcional)
+ * @param {HTMLSelectElement|string} selectRegion 
+ * @param {HTMLSelectElement|string} selectComuna 
+ * @param {string} [regionInicial=""] 
+ * @param {string} [comunaInicial=""] 
  */
 function configurarSelectsRegionComuna(selectRegion, selectComuna, regionInicial = "", comunaInicial = "") {
     const elRegion = typeof selectRegion === 'string' ? document.getElementById(selectRegion) : selectRegion;
@@ -118,7 +110,7 @@ function configurarSelectsRegionComuna(selectRegion, selectComuna, regionInicial
 
     if (!elRegion || !elComuna) return;
 
-    // Poblar regiones
+    // ppooblar regiones
     elRegion.innerHTML = '<option value="">-- Seleccione una región --</option>';
     REGIONES_Y_COMUNAS.forEach(item => {
         const option = document.createElement('option');
@@ -130,7 +122,7 @@ function configurarSelectsRegionComuna(selectRegion, selectComuna, regionInicial
         elRegion.appendChild(option);
     });
 
-    // Función interna para actualizar las comunas
+    // esta funcion actualiza las comunas
     const actualizarComunas = (regionSeleccionada, seleccionPrevia = "") => {
         elComuna.innerHTML = '<option value="">-- Seleccione una comuna --</option>';
         if (!regionSeleccionada) {
@@ -155,24 +147,24 @@ function configurarSelectsRegionComuna(selectRegion, selectComuna, regionInicial
         }
     };
 
-    // Si ya había una región inicial seleccionada, poblar sus comunas
+    // si ya habia una region inicial seleccionada, poblar sus comunas
     if (regionInicial) {
         actualizarComunas(regionInicial, comunaInicial);
     } else {
         elComuna.disabled = true;
     }
 
-    // Escuchar cambios en la región
+    // escuchar cambios en la región
     elRegion.addEventListener('change', () => {
         actualizarComunas(elRegion.value);
-        // Limpiar validaciones si existen
+        // limpiar validaciones si existen
         if (typeof limpiarValidacion === 'function') {
             limpiarValidacion(elComuna);
         }
     });
 }
 
-// Exponer en objeto window si está en entorno navegador
+// expongo en objeto window si esta en entorno navegador
 if (typeof window !== 'undefined') {
     window.REGIONES_Y_COMUNAS = REGIONES_Y_COMUNAS;
     window.obtenerNombresRegiones = obtenerNombresRegiones;
