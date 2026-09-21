@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin - LogisTrack</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Estilos del Proyecto -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div class="admin-wrapper">
+    <!-- Menú Lateral (Sidebar) -->
+    <aside class="admin-sidebar shadow-sm">
+      <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+        <i class="bi bi-box-seam-fill fs-3 text-warning"></i>
+        <div>
+          <h5 class="m-0 fw-bold lh-1 text-white">LogisTrack</h5>
+          <small class="text-white-50">Panel de Control</small>
+        </div>
+      </div>
+
+      <nav class="nav flex-column mt-3 flex-grow-1">
+        <a class="nav-link active" href="admin-home.html">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        <a class="nav-link" href="admin-productos.html" id="nav-productos">
+          <i class="bi bi-boxes"></i> Productos
+        </a>
+        <a class="nav-link" href="#seccion-ordenes" id="nav-ordenes">
+          <i class="bi bi-receipt"></i> Órdenes
+        </a>
+        <a class="nav-link" href="admin-usuarios.html" id="nav-usuarios">
+          <i class="bi bi-people"></i> Usuarios
+        </a>
+      </nav>
+
+      <div class="p-3 border-top border-secondary border-opacity-25">
+        <a href="index.html" class="btn btn-outline-light w-100 btn-sm d-flex align-items-center justify-content-center gap-2">
+          <i class="bi bi-shop"></i> Ir a la Tienda
+        </a>
+      </div>
+    </aside>
+
+    <!-- Área Principal de Contenido -->
+    <main class="admin-content d-flex flex-column justify-content-between">
+      <div>
+        <!-- Encabezado Superior -->
+        <header class="admin-topbar d-flex justify-content-between align-items-center">
+          <div>
+            <h4 class="m-0 fw-bold text-dark">Dashboard General</h4>
+            <small class="text-muted">Resumen operativo del inventario y ventas</small>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-dark border">Rol activo:</span>
+            <select id="select-rol-simulado" class="form-select form-select-sm" style="width: 150px;">
+              <option value="Administrador">Administrador</option>
+              <option value="Vendedor">Vendedor</option>
+              <option value="Cliente">Cliente</option>
+            </select>
+          </div>
+        </header>
+
+        <div class="container-fluid p-4">
+          <!-- Alerta informativa de permisos -->
+          <div id="alerta-rol" class="alert alert-info py-2 small d-none" role="alert"></div>
+
+          <!-- Fila de Tarjetas de Métricas (KPIs) -->
+          <div class="row g-3 mb-5">
+            <!-- Total Productos -->
+            <div class="col-12 col-sm-6 col-xl-3">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                  <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Total Catálogo</span>
+                    <h2 class="fw-bold m-0 mt-1 text-dark" id="kpi-total-productos">0</h2>
+                  </div>
+                  <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-3">
+                    <i class="bi bi-boxes fs-3"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stock Crítico -->
+            <div class="col-12 col-sm-6 col-xl-3">
+              <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                  <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Stock Crítico</span>
+                    <h2 class="fw-bold m-0 mt-1 text-warning" id="kpi-stock-critico">0</h2>
+                  </div>
+                  <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-3">
+                    <i class="bi bi-exclamation-triangle-fill fs-3"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Usuarios -->
+            <div class="col-12 col-sm-6 col-xl-3">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                  <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Usuarios</span>
+                    <h2 class="fw-bold m-0 mt-1 text-dark" id="kpi-total-usuarios">0</h2>
+                  </div>
+                  <div class="bg-info bg-opacity-10 text-info p-3 rounded-3">
+                    <i class="bi bi-people-fill fs-3"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Órdenes -->
+            <div class="col-12 col-sm-6 col-xl-3">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                  <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Órdenes</span>
+                    <h2 class="fw-bold m-0 mt-1 text-dark" id="kpi-total-ordenes">0</h2>
+                  </div>
+                  <div class="bg-success bg-opacity-10 text-success p-3 rounded-3">
+                    <i class="bi bi-receipt-cutoff fs-3"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabla de Resumen de Inventario -->
+          <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+              <h6 class="fw-bold text-dark m-0">
+                <i class="bi bi-box-seam me-2 text-primary"></i> Estado de Inventario Reciente
+              </h6>
+              <a href="admin-productos.html" class="btn btn-outline-primary btn-sm">
+                Ver Todo el Inventario <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="ps-3">Código</th>
+                      <th>Producto</th>
+                      <th class="text-end">Precio</th>
+                      <th class="text-center">Stock</th>
+                      <th class="pe-3 text-center">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabla-resumen-stock">
+                    <!-- Filas inyectadas por JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sección de Usuarios (Visible solo para Administrador) -->
+          <div class="card shadow-sm border-0 mb-3" id="seccion-usuarios-home">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+              <h6 class="fw-bold text-dark m-0">
+                <i class="bi bi-shield-lock me-2 text-primary"></i> Control Rápido de Usuarios
+              </h6>
+              <a href="admin-usuarios.html" class="btn btn-outline-secondary btn-sm">
+                Gestionar Usuarios
+              </a>
+            </div>
+            <div class="card-body py-3">
+              <p class="text-muted small m-0">
+                Módulo habilitado exclusivamente para el perfil <strong>Administrador</strong>. Permite alta, baja y cambio de roles de colaboradores.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer Duoc UC 2026 -->
+      <footer class="footer-copy py-3 text-center text-secondary border-top bg-white mt-4">
+        <div class="container-fluid">
+          <small>
+            Evaluación Parcial N° 1 | DSY1104 Desarrollo FullStack II |
+            Equipo: <strong>Alfredo De La Hoz</strong>, <strong>Angel Martinez</strong> y <strong>Oliver Duncan</strong> | Duoc UC 2026
+          </small>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Lógica modular externa -->
+  <script src="js/admin-home.js"></script>
+</body>
+</html>
