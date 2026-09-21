@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulario de Usuario - LogisTrack</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Estilos del Proyecto -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div class="admin-wrapper">
+    <!-- Menú Lateral (Sidebar) -->
+    <aside class="admin-sidebar shadow-sm">
+      <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+        <i class="bi bi-box-seam-fill fs-3 text-warning"></i>
+        <div>
+          <h5 class="m-0 fw-bold lh-1 text-white">LogisTrack</h5>
+          <small class="text-white-50">Panel de Control</small>
+        </div>
+      </div>
+
+      <nav class="nav flex-column mt-3 flex-grow-1">
+        <a class="nav-link" href="admin-home.html">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        <a class="nav-link" href="admin-productos.html" id="nav-productos">
+          <i class="bi bi-boxes"></i> Productos
+        </a>
+        <a class="nav-link" href="admin-home.html#seccion-ordenes" id="nav-ordenes">
+          <i class="bi bi-receipt"></i> Órdenes
+        </a>
+        <a class="nav-link active" href="admin-usuarios.html" id="nav-usuarios">
+          <i class="bi bi-people"></i> Usuarios
+        </a>
+      </nav>
+
+      <div class="p-3 border-top border-secondary border-opacity-25">
+        <a href="index.html" class="btn btn-outline-light w-100 btn-sm d-flex align-items-center justify-content-center gap-2">
+          <i class="bi bi-shop"></i> Ir a la Tienda
+        </a>
+      </div>
+    </aside>
+
+    <!-- Área Principal de Contenido -->
+    <main class="admin-content d-flex flex-column justify-content-between">
+      <div>
+        <!-- Encabezado Superior -->
+        <header class="admin-topbar d-flex justify-content-between align-items-center">
+          <div>
+            <h4 class="m-0 fw-bold text-dark" id="titulo-pantalla">Nuevo Usuario</h4>
+            <small class="text-muted" id="subtitulo-pantalla">Registro de colaboradores y asignación de perfiles</small>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-dark border">Rol activo:</span>
+            <select id="select-rol-simulado" class="form-select form-select-sm" style="width: 150px;">
+              <option value="Administrador">Administrador</option>
+              <option value="Vendedor">Vendedor</option>
+              <option value="Cliente">Cliente</option>
+            </select>
+          </div>
+        </header>
+
+        <div class="container-fluid p-4">
+          <!-- Alerta informativa de permisos -->
+          <div id="alerta-rol" class="alert alert-info py-2 small d-none" role="alert"></div>
+
+          <!-- Breadcrumb -->
+          <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item"><a href="admin-home.html" class="text-decoration-none">Dashboard</a></li>
+              <li class="breadcrumb-item"><a href="admin-usuarios.html" class="text-decoration-none">Usuarios</a></li>
+              <li class="breadcrumb-item active fw-semibold" id="breadcrumb-activo" aria-current="page">Nuevo</li>
+            </ol>
+          </nav>
+
+          <!-- Tarjeta del Formulario -->
+          <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+              <h6 class="fw-bold text-dark m-0" id="card-header-titulo">
+                <i class="bi bi-person-lines-fill me-1 text-primary"></i> Ficha de Usuario
+              </h6>
+              <span class="text-muted small">* Campos requeridos</span>
+            </div>
+
+            <div class="card-body p-4">
+              <!-- Mensaje global de error -->
+              <div id="alerta-formulario" class="alert alert-danger d-none py-2 small" role="alert"></div>
+
+              <form id="form-usuario" novalidate>
+                <div class="row g-3">
+
+                  <!-- 1. RUN (Requerido, 7 a 9 caracteres, sin puntos ni guion) -->
+                  <div class="col-12 col-md-6">
+                    <label for="usr-run" class="form-label fw-semibold small">
+                      RUN <span class="text-danger">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      id="usr-run" 
+                      placeholder="Ej: 19011022K" 
+                      minlength="7" 
+                      maxlength="9" 
+                      required
+                    >
+                    <div class="invalid-feedback" id="feedback-run">
+                      Ingresa un RUN válido (7 a 9 caracteres, sin puntos ni guion).
+                    </div>
+                    <div class="form-text small">Sin puntos ni guion, con dígito verificador. Ej: 19011022K.</div>
+                  </div>
+
+                  <!-- 2. Tipo de Usuario / Rol (Requerido: Administrador, Vendedor, Cliente) -->
+                  <div class="col-12 col-md-6">
+                    <label for="usr-rol" class="form-label fw-semibold small">
+                      Tipo de Usuario <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="usr-rol" required>
+                      <option value="" selected disabled>Seleccionar perfil...</option>
+                      <option value="Administrador">Administrador</option>
+                      <option value="Vendedor">Vendedor</option>
+                      <option value="Cliente">Cliente</option>
+                    </select>
+                    <div class="invalid-feedback">
+                      Por favor, selecciona un tipo de usuario.
+                    </div>
+                  </div>
+
+                  <!-- 3. Nombre (Requerido, Máx 50) -->
+                  <div class="col-12 col-md-6">
+                    <label for="usr-nombre" class="form-label fw-semibold small">
+                      Nombre <span class="text-danger">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      id="usr-nombre" 
+                      placeholder="Ej: Oliver" 
+                      maxlength="50" 
+                      required
+                    >
+                    <div class="invalid-feedback">
+                      El nombre es obligatorio (máximo 50 caracteres).
+                    </div>
+                  </div>
+
+                  <!-- 4. Apellidos (Requerido, Máx 100) -->
+                  <div class="col-12 col-md-6">
+                    <label for="usr-apellidos" class="form-label fw-semibold small">
+                      Apellidos <span class="text-danger">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      id="usr-apellidos" 
+                      placeholder="Ej: Duncan Ruiz" 
+                      maxlength="100" 
+                      required
+                    >
+                    <div class="invalid-feedback">
+                      Los apellidos son obligatorios (máximo 100 caracteres).
+                    </div>
+                  </div>
+
+                  <!-- 5. Correo (Requerido, Máx 100, dominios permitidos) -->
+                  <div class="col-12 col-md-6">
+                    <label for="usr-correo" class="form-label fw-semibold small">
+                      Correo Electrónico <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                      <input 
+                        type="email" 
+                        class="form-control" 
+                        id="usr-correo" 
+                        placeholder="usuario@duoc.cl" 
+                        maxlength="100" 
+                        required
+                      >
+                      <div class="invalid-feedback" id="feedback-correo">
+                        Correo inválido. Solo se admiten dominios @duoc.cl, @profesor.duoc.cl o @gmail.com.
+                      </div>
+                    </div>
+                    <div class="form-text small">
+                      Permitidos: @duoc.cl, @profesor.duoc.cl, @gmail.com
+                    </div>
+                  </div>
+
+                  <!-- 6. Fecha Nacimiento (Opcional) -->
+                  <div class="col-12 col-md-6">
+                    <label for="usr-fecha-nac" class="form-label fw-semibold small">
+                      Fecha de Nacimiento
+                    </label>
+                    <input 
+                      type="date" 
+                      class="form-control" 
+                      id="usr-fecha-nac"
+                    >
+                    <div class="form-text small">Opcional.</div>
+                  </div>
+
+                  <!-- 7. Región (Select dinámico en cascada) -->
+                  <div class="col-12 col-md-6">
+                    <label for="usr-region" class="form-label fw-semibold small">
+                      Región <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="usr-region" required>
+                      <option value="" selected disabled>Seleccionar región...</option>
+                    </select>
+                    <div class="invalid-feedback">
+                      Por favor, selecciona una región.
+                    </div>
+                  </div>
+
+                  <!-- 8. Comuna (Dependiente de la región) -->
+                  <div class="col-12 col-md-6">
+                    <label for="usr-comuna" class="form-label fw-semibold small">
+                      Comuna <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="usr-comuna" required disabled>
+                      <option value="" selected disabled>Primero selecciona una región...</option>
+                    </select>
+                    <div class="invalid-feedback">
+                      Por favor, selecciona una comuna.
+                    </div>
+                  </div>
+
+                  <!-- 9. Dirección (Requerido, Máx 300) -->
+                  <div class="col-12">
+                    <label for="usr-direccion" class="form-label fw-semibold small">
+                      Dirección <span class="text-danger">*</span>
+                    </label>
+                    <textarea 
+                      class="form-control" 
+                      id="usr-direccion" 
+                      rows="2" 
+                      placeholder="Ej: Av. Vicuña Mackenna 4686, Depto 502" 
+                      maxlength="300" 
+                      required
+                    ></textarea>
+                    <div class="d-flex justify-content-between form-text small">
+                      <span>Calle, numeración y detalles adicionales.</span>
+                      <span id="contador-direccion">0 / 300 caracteres</span>
+                    </div>
+                    <div class="invalid-feedback">
+                      La dirección es obligatoria y no puede superar los 300 caracteres.
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Botonera -->
+                <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                  <a href="admin-usuarios.html" class="btn btn-outline-secondary px-4">
+                    Cancelar
+                  </a>
+                  <button type="submit" class="btn btn-primary px-4 d-inline-flex align-items-center gap-2" id="btn-guardar">
+                    <i class="bi bi-check-circle"></i> Guardar Usuario
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer Duoc UC 2026 -->
+      <footer class="footer-copy py-3 text-center text-secondary border-top bg-white mt-4">
+        <div class="container-fluid">
+          <small>
+            Evaluación Parcial N° 1 | DSY1104 Desarrollo FullStack II |
+            Equipo: <strong>Alfredo De La Hoz</strong>, <strong>Angel Martinez</strong> y <strong>Oliver Duncan</strong> | Duoc UC 2026
+          </small>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Lógica modular externa -->
+  <script src="js/admin-usuario-form.js"></script>
+</body>
+</html>
