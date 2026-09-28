@@ -125,13 +125,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function iniciarSesion(usuario) {
-        localStorage.setItem('logistrack_sesion_activa', JSON.stringify({
+        const rolUsuario = usuario.rol || 'Cliente';
+        localStorage.setItem('logistrack_sesion_activo', JSON.stringify({
+            
             correo: usuario.correo,
             nombre: `${usuario.nombre || ''} ${usuario.apellidos || ''}`.trim() || usuario.correo,
             rol: usuario.rol || 'Cliente',
             fechaLogin: new Date().toISOString()
         }));
 
+        localStorage.setItem('logistrack_rol_activo', rolUsuario);
         mostrarAlerta(`¡Bienvenido/a, ${usuario.nombre || usuario.correo}! Redirigiendo a la tienda...`, 'success');
 
         // deshabilita el botón mientras redirige
@@ -142,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         setTimeout(() => {
-            window.location.href = 'index.html';
+            window.location.href = 'admin-home.html';
         }, 1200);
     }
 
