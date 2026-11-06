@@ -1,8 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
-import Proximamente from './pages/Proximamente';
 import Productos from './pages/Productos';
 import DetalleProducto from './pages/DetalleProducto';
+import Proximamente from './pages/Proximamente';
 
 function App() {
   return (
