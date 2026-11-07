@@ -28,6 +28,11 @@ function Header({ cantidadCarrito = 0 }) {
               <li className="nav-item"><Link className="nav-link" to="/contacto">Contacto</Link></li>
             </ul>
             <ul className="navbar-nav ms-lg-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-2">
+              <li className="nav-item">
+                <Link className="nav-link text-warning fw-semibold" to="/admin">
+                  <i className="bi bi-shield-lock me-1"></i>Panel Admin
+                </Link>
+              </li>
               <li className="nav-item"><Link className="nav-link" to="/login"><i className="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión</Link></li>
               <li className="nav-item"><Link className="nav-link" to="/registro">Registrar usuario</Link></li>
               <li className="nav-item ms-lg-1">

@@ -12,9 +12,15 @@ import BlogDetalle from './pages/BlogDetalle';
 import Contacto from './pages/Contacto';
 import Proximamente from './pages/Proximamente';
 
+// Componentes y Vistas del Módulo de Administración
+import RutaProtegida from './components/admin/RutaProtegida';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+
 function App() {
   return (
     <Routes>
+      {/* Rutas Públicas de la Tienda (con Header y Footer) */}
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/productos" element={<Productos />} />
@@ -30,7 +36,26 @@ function App() {
         <Route path="/registro" element={<Proximamente titulo="Registro" />} />
         <Route path="/carrito" element={<Proximamente titulo="Carrito" />} />
         <Route path="/checkout" element={<Proximamente titulo="Checkout" />} />
-        <Route path="/admin/*" element={<Proximamente titulo="Panel administrador" />} />
+      </Route>
+
+      {/* Rutas Protegidas del Backoffice Admin (Seguridad Fail-Closed) */}
+      <Route element={<RutaProtegida rolesPermitidos={['Administrador', 'Vendedor']} />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="productos" element={<Proximamente titulo="Gestión de Productos" />} />
+          <Route path="productos/criticos" element={<Proximamente titulo="Productos en Stock Crítico" />} />
+          <Route path="productos/nuevo" element={<Proximamente titulo="Nuevo Producto" />} />
+          <Route path="productos/editar/:sku" element={<Proximamente titulo="Editar Producto" />} />
+          <Route path="categorias" element={<Proximamente titulo="Gestión de Categorías" />} />
+          <Route path="ordenes" element={<Proximamente titulo="Órdenes de Compra" />} />
+          <Route path="ordenes/:id/boleta" element={<Proximamente titulo="Detalle de Boleta" />} />
+          <Route path="usuarios" element={<Proximamente titulo="Gestión de Usuarios" />} />
+          <Route path="usuarios/nuevo" element={<Proximamente titulo="Nuevo Usuario" />} />
+          <Route path="usuarios/editar/:run" element={<Proximamente titulo="Editar Usuario" />} />
+          <Route path="usuarios/:run/historial" element={<Proximamente titulo="Historial de Compras de Usuario" />} />
+          <Route path="reportes" element={<Proximamente titulo="Reportes del Negocio" />} />
+          <Route path="perfil" element={<Proximamente titulo="Perfil de Administrador" />} />
+        </Route>
       </Route>
     </Routes>
   );
