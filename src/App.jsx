@@ -2,13 +2,14 @@ import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Productos from './pages/Productos';
 import DetalleProducto from './pages/DetalleProducto';
+import Home from './pages/Home';
 import Proximamente from './pages/Proximamente';
 
 function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route path="/" element={<Proximamente titulo="Home" />} />
+        <Route path="/" element={<Home />} />
         <Route path="/productos" element={<Productos />} />
         <Route path="/productos/:sku" element={<DetalleProducto />} />
         <Route path="/categorias" element={<Proximamente titulo="Categorías" />} />
