@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrito de Compras - LogisTrack Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-navy shadow-sm sticky-top" aria-label="Navegación principal">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
+                    <span class="fs-4">📦</span>
+                    <div>
+                        <span class="fw-bold d-block lh-1">LogisTrack</span>
+                        <small class="text-secondary" style="font-size: 0.72rem; letter-spacing: 0.5px;">TIENDA ONLINE</small>
+                    </div>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-controls="menuPrincipal" aria-expanded="false" aria-label="Alternar navegación">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="menuPrincipal">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-1">
+                        <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="productos.html">Productos</a></li>
+                        <li class="nav-item"><a class="nav-link" href="nosotros.html">Nosotros</a></li>
+                        <li class="nav-item"><a class="nav-link" href="contacto.html">Contacto</a></li>
+                    </ul>
+                    <ul class="navbar-nav ms-lg-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-2">
+                        <li class="nav-item"><a class="nav-link" href="login.html"><i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión</a></li>
+                        <li class="nav-item"><a class="nav-link" href="registro.html">Registrar usuario</a></li>
+                        <li class="nav-item ms-lg-1">
+                            <a href="carrito.html" class="btn btn-outline-light btn-sm d-flex align-items-center gap-2 px-3 active">
+                                <i class="bi bi-cart3"></i>
+                                <span>Cart (<span id="carrito-contador">0</span>)</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container my-5">
+
+        <h1 class="h2 fw-bold text-navy mb-4"><i class="bi bi-cart3 me-2"></i>Tu Carrito de Compras</h1>
+
+        <!-- Carrito con items -->
+        <div id="carrito-con-items" class="d-none">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th class="text-center">Precio unitario</th>
+                            <th class="text-center" style="width: 160px;">Cantidad</th>
+                            <th class="text-end">Subtotal</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="carrito-filas">
+                        <!-- Filas generadas por js/carrito.js -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 pt-3 border-top">
+                <button class="btn btn-outline-secondary" id="btn-vaciar-carrito">
+                    <i class="bi bi-trash me-1"></i> Vaciar carrito
+                </button>
+                <div class="text-end">
+                    <p class="mb-1 text-muted">Total</p>
+                    <p class="carrito-total mb-2" id="carrito-total">$0</p>
+                    <button class="btn btn-brand btn-lg" id="btn-finalizar-compra">
+                        <i class="bi bi-bag-check me-1"></i> Finalizar compra
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carrito vacio -->
+        <div id="carrito-vacio" class="text-center py-5">
+            <i class="bi bi-cart-x display-1 text-muted"></i>
+            <h2 class="fw-bold text-navy mt-3">Tu carrito está vacío</h2>
+            <p class="text-muted">Aún no has agregado productos.</p>
+            <a href="productos.html" class="btn btn-brand mt-2">Ir al catálogo</a>
+        </div>
+
+        <!-- Mensaje de compra finalizada -->
+        <div id="carrito-finalizado" class="alert alert-success text-center d-none" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            ¡Compra simulada con éxito! (el pago real se conecta cuando integremos el backend).
+        </div>
+
+    </main>
+
+    <footer class="bg-navy text-light pt-5 mt-auto">
+        <div class="container pb-4">
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <h4 class="h5 fw-bold text-white mb-3">Sobre LogisTrack</h4>
+                    <p class="text-secondary small">
+                        Tienda online y panel de gestión conectados conceptualmente con los microservicios de
+                        LogisTrack (auth-service, product-service, order-service).
+                    </p>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <h4 class="h5 fw-bold text-white mb-3">Navegación Rápida</h4>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="index.html"><i class="bi bi-chevron-right me-1"></i>Home</a></li>
+                        <li class="mb-2"><a href="productos.html"><i class="bi bi-chevron-right me-1"></i>Productos</a></li>
+                        <li class="mb-2"><a href="nosotros.html"><i class="bi bi-chevron-right me-1"></i>Nosotros</a></li>
+                        <li class="mb-2"><a href="contacto.html"><i class="bi bi-chevron-right me-1"></i>Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 col-md-12">
+                    <h4 class="h5 fw-bold text-white mb-3">Contacto</h4>
+                    <p class="text-secondary small mb-1"><i class="bi bi-telephone me-2"></i>+56 2 2345 6789</p>
+                    <p class="text-secondary small mb-1"><i class="bi bi-envelope me-2"></i>contacto@logistrack.cl</p>
+                    <p class="text-secondary small"><i class="bi bi-clock me-2"></i>Lunes a Viernes 08:30 - 18:30 hrs</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-copy py-3 text-center text-secondary border-top border-secondary border-opacity-25">
+            <div class="container">
+                <small>
+                    Evaluación Parcial N° 1 - DSY1104 Desarrollo FullStack II |
+                    Equipo: <strong>Alfredo De La Hoz</strong>, <strong>Angel Martinez</strong> y <strong>Oliver Duncan</strong> | Duoc UC 2026
+                </small>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="js/main.js"></script>
+    <script src="js/carrito.js"></script>
+</body>
+</html>
