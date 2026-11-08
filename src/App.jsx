@@ -16,6 +16,10 @@ import Proximamente from './pages/Proximamente';
 import RutaProtegida from './components/admin/RutaProtegida';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminProductos from './pages/admin/AdminProductos';
+import AdminProductosCriticos from './pages/admin/AdminProductosCriticos';
+import AdminProductoForm from './pages/admin/AdminProductoForm';
+import AdminCategorias from './pages/admin/AdminCategorias';
 
 function App() {
   return (
@@ -42,11 +46,11 @@ function App() {
       <Route element={<RutaProtegida rolesPermitidos={['Administrador', 'Vendedor']} />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
-          <Route path="productos" element={<Proximamente titulo="Gestión de Productos" />} />
-          <Route path="productos/criticos" element={<Proximamente titulo="Productos en Stock Crítico" />} />
-          <Route path="productos/nuevo" element={<Proximamente titulo="Nuevo Producto" />} />
-          <Route path="productos/editar/:sku" element={<Proximamente titulo="Editar Producto" />} />
-          <Route path="categorias" element={<Proximamente titulo="Gestión de Categorías" />} />
+          <Route path="productos" element={<AdminProductos />} />
+          <Route path="productos/criticos" element={<AdminProductosCriticos />} />
+          <Route path="productos/nuevo" element={<AdminProductoForm />} />
+          <Route path="productos/editar/:sku" element={<AdminProductoForm />} />
+          <Route path="categorias" element={<AdminCategorias />} />
           <Route path="ordenes" element={<Proximamente titulo="Órdenes de Compra" />} />
           <Route path="ordenes/:id/boleta" element={<Proximamente titulo="Detalle de Boleta" />} />
           <Route path="usuarios" element={<Proximamente titulo="Gestión de Usuarios" />} />
