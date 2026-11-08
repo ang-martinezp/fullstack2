@@ -20,6 +20,9 @@ import AdminProductos from './pages/admin/AdminProductos';
 import AdminProductosCriticos from './pages/admin/AdminProductosCriticos';
 import AdminProductoForm from './pages/admin/AdminProductoForm';
 import AdminCategorias from './pages/admin/AdminCategorias';
+import AdminUsuarios from './pages/admin/AdminUsuarios';
+import AdminUsuarioForm from './pages/admin/AdminUsuarioForm';
+import AdminUsuarioHistorial from './pages/admin/AdminUsuarioHistorial';
 
 function App() {
   return (
@@ -53,10 +56,10 @@ function App() {
           <Route path="categorias" element={<AdminCategorias />} />
           <Route path="ordenes" element={<Proximamente titulo="Órdenes de Compra" />} />
           <Route path="ordenes/:id/boleta" element={<Proximamente titulo="Detalle de Boleta" />} />
-          <Route path="usuarios" element={<Proximamente titulo="Gestión de Usuarios" />} />
-          <Route path="usuarios/nuevo" element={<Proximamente titulo="Nuevo Usuario" />} />
-          <Route path="usuarios/editar/:run" element={<Proximamente titulo="Editar Usuario" />} />
-          <Route path="usuarios/:run/historial" element={<Proximamente titulo="Historial de Compras de Usuario" />} />
+          <Route path="usuarios" element={<AdminUsuarios />} />
+          <Route path="usuarios/nuevo" element={<AdminUsuarioForm />} />
+          <Route path="usuarios/editar/:run" element={<AdminUsuarioForm />} />
+          <Route path="usuarios/:run/historial" element={<AdminUsuarioHistorial />} />
           <Route path="reportes" element={<Proximamente titulo="Reportes del Negocio" />} />
           <Route path="perfil" element={<Proximamente titulo="Perfil de Administrador" />} />
         </Route>
