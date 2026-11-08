@@ -4,15 +4,29 @@ import { obtenerRolActivo } from '../../data/usuarios';
 
 /**
  * Componente Guard de Roles con enfoque Fail-Closed.
- * Por defecto bloquea el acceso si no se cumplen estrictamente los roles permitidos.
- * 
- * @param {Array<string>} rolesPermitidos - Lista blanca de roles con autorización (ej: ['Administrador', 'Vendedor'])
+ *
+ * A diferencia del patrón "Fail-Open" de la Entrega 1 (donde cada script verificaba
+ * el rol individualmente una vez cargado el DOM, dejando expuesto el contenido si
+ * el script fallaba), este Guard bloquea el montaje del componente antes de renderizar.
+ *
+ * Si el rol no pertenece a la lista blanca o no está definido, se deniega el acceso
+ * inmediatamente y se redirige con advertencia.
+ *
+ * @param {Array<string>} rolesPermitidos - Lista blanca de roles autorizados (ej: ['Administrador', 'Vendedor'])
+ * @param {string} [redirigirA='/'] - Ruta de redirección en caso de acceso denegado
+ * @param {string} [mensajeAlerta] - Mensaje explicativo para el usuario
+ * @param {React.ReactNode} [children] - Componentes protegidos
  */
-function RutaProtegida({ rolesPermitidos = ['Administrador', 'Vendedor'], children }) {
+function RutaProtegida({
+  rolesPermitidos = ['Administrador', 'Vendedor'],
+  redirigirA = '/',
+  mensajeAlerta = 'Acceso Denegado: No tienes permisos para acceder a esta sección.',
+  children
+}) {
   const [rolActual, setRolActual] = useState(obtenerRolActivo());
 
   useEffect(() => {
-    // Sincronizar en tiempo real cuando el rol cambie en cualquier parte de la app
+    // Sincronización en tiempo real ante cambios de rol en sessionStorage/localStorage
     const sincronizarRol = () => {
       setRolActual(obtenerRolActivo());
     };
@@ -26,15 +40,19 @@ function RutaProtegida({ rolesPermitidos = ['Administrador', 'Vendedor'], childr
     };
   }, []);
 
-  // Enfoque Fail-Closed: si no hay rol o el rol no está en la lista blanca, acceso denegado
+  // Principio Fail-Closed: Por defecto cerrado a menos que el rol esté explícitamente en la lista blanca
   const tienePermiso = Boolean(rolActual && rolesPermitidos.includes(rolActual));
 
   if (!tienePermiso) {
-    // Si es Cliente o rol no autorizado, redirigir a la tienda pública con advertencia
-    return <Navigate to="/" replace state={{ alertaAcceso: 'Acceso Denegado: Los clientes solo tienen acceso a la tienda.' }} />;
+    return (
+      <Navigate
+        to={redirigirA}
+        replace
+        state={{ alertaAcceso: mensajeAlerta, rolRechazado: rolActual }}
+      />
+    );
   }
 
-  // Si está autorizado, renderizar la subruta o componentes hijos
   return children ? children : <Outlet />;
 }
 

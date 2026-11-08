@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   obtenerProductos,
   eliminarProducto,
@@ -9,6 +9,9 @@ import { obtenerCategorias } from '../../data/categorias';
 import { obtenerRolActivo } from '../../data/usuarios';
 
 function AdminProductos() {
+  const location = useLocation();
+  const alertaAcceso = location.state?.alertaAcceso;
+
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [filtroTexto, setFiltroTexto] = useState('');
@@ -65,6 +68,18 @@ function AdminProductos() {
 
   return (
     <div>
+      {/* Alerta de Seguridad / Guard Fail-Closed (si viene redirigido sin permiso) */}
+      {alertaAcceso && (
+        <div className="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+          <div className="d-flex align-items-center">
+            <i className="bi bi-shield-x me-2 fs-5"></i>
+            <div>
+              <strong>Seguridad LogisTrack:</strong> {alertaAcceso}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Alerta de acción exitosa */}
       {alertaExito && (
         <div className="alert alert-success alert-dismissible fade show shadow-sm" role="alert">

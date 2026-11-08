@@ -50,7 +50,15 @@ function App() {
       </Route>
 
       {/* Rutas Protegidas del Backoffice Admin (Seguridad Fail-Closed) */}
-      <Route element={<RutaProtegida rolesPermitidos={['Administrador', 'Vendedor']} />}>
+      <Route
+        element={
+          <RutaProtegida
+            rolesPermitidos={['Administrador', 'Vendedor']}
+            redirigirA="/"
+            mensajeAlerta="Acceso Denegado: Los clientes solo tienen acceso a la tienda."
+          />
+        }
+      >
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="productos" element={<AdminProductos />} />
@@ -60,12 +68,24 @@ function App() {
           <Route path="categorias" element={<AdminCategorias />} />
           <Route path="ordenes" element={<AdminOrdenes />} />
           <Route path="ordenes/:id/boleta" element={<AdminBoleta />} />
-          <Route path="usuarios" element={<AdminUsuarios />} />
-          <Route path="usuarios/nuevo" element={<AdminUsuarioForm />} />
-          <Route path="usuarios/editar/:run" element={<AdminUsuarioForm />} />
-          <Route path="usuarios/:run/historial" element={<AdminUsuarioHistorial />} />
           <Route path="reportes" element={<AdminReportes />} />
           <Route path="perfil" element={<AdminPerfil />} />
+
+          {/* Submódulo de Usuarios: Exclusivo solo para Administrador (Fail-Closed) */}
+          <Route
+            element={
+              <RutaProtegida
+                rolesPermitidos={['Administrador']}
+                redirigirA="/admin/productos"
+                mensajeAlerta="Acceso Denegado: Los vendedores no tienen permisos para gestionar cuentas de usuario."
+              />
+            }
+          >
+            <Route path="usuarios" element={<AdminUsuarios />} />
+            <Route path="usuarios/nuevo" element={<AdminUsuarioForm />} />
+            <Route path="usuarios/editar/:run" element={<AdminUsuarioForm />} />
+            <Route path="usuarios/:run/historial" element={<AdminUsuarioHistorial />} />
+          </Route>
         </Route>
       </Route>
     </Routes>
