@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { obtenerProductos } from '../data/productos';
 import ProductoCard from '../components/ProductoCard';
 
 const SKUS_DESTACADOS = ['SKU-001', 'SKU-002', 'SKU-005'];
 
 function Home() {
+    const location = useLocation();
+    const alertaAcceso = location.state?.alertaAcceso;
+
     useEffect(() => {
         document.title = 'LogisTrack Store - Tienda Online';
     }, []);
@@ -16,6 +19,18 @@ function Home() {
 
     return (
         <>
+            {/* Alerta de Seguridad / Guard Fail-Closed (si viene redirigido sin permiso) */}
+            {alertaAcceso && (
+                <div className="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+                    <div className="d-flex align-items-center">
+                        <i className="bi bi-shield-x me-2 fs-4"></i>
+                        <div>
+                            <strong>Seguridad LogisTrack:</strong> {alertaAcceso}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* SECCIÓN 1: HERO BANNER */}
             <section className="hero-banner p-5 mb-5 rounded-4 text-white shadow">
                 <div className="row align-items-center">
