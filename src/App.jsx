@@ -25,6 +25,8 @@ import AdminUsuarioForm from './pages/admin/AdminUsuarioForm';
 import AdminUsuarioHistorial from './pages/admin/AdminUsuarioHistorial';
 import AdminOrdenes from './pages/admin/AdminOrdenes';
 import AdminBoleta from './pages/admin/AdminBoleta';
+import AdminReportes from './pages/admin/AdminReportes';
+import AdminPerfil from './pages/admin/AdminPerfil';
 
 function App() {
   return (
@@ -62,8 +64,8 @@ function App() {
           <Route path="usuarios/nuevo" element={<AdminUsuarioForm />} />
           <Route path="usuarios/editar/:run" element={<AdminUsuarioForm />} />
           <Route path="usuarios/:run/historial" element={<AdminUsuarioHistorial />} />
-          <Route path="reportes" element={<Proximamente titulo="Reportes del Negocio" />} />
-          <Route path="perfil" element={<Proximamente titulo="Perfil de Administrador" />} />
+          <Route path="reportes" element={<AdminReportes />} />
+          <Route path="perfil" element={<AdminPerfil />} />
         </Route>
       </Route>
     </Routes>
