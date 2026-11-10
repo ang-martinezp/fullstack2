@@ -1,27 +1,10 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { obtenerProductoPorSku } from '../data/productos';
-
-const CLAVE_CARRITO = 'logistrack_carrito';
+import { agregarAlCarrito, calcularPrecioEfectivo } from '../data/carrito';
 
 function formatearCLP(numero) {
   return '$' + numero.toLocaleString('es-CL');
-}
-
-function agregarAlCarrito(producto, cantidad) {
-  const carrito = JSON.parse(localStorage.getItem(CLAVE_CARRITO) || '[]');
-  const existente = carrito.find((item) => item.codigo === producto.sku);
-  if (existente) {
-    existente.cantidad += cantidad;
-  } else {
-    carrito.push({
-      codigo: producto.sku,
-      nombre: producto.nombre,
-      precio: producto.precio,
-      cantidad,
-    });
-  }
-  localStorage.setItem(CLAVE_CARRITO, JSON.stringify(carrito));
 }
 
 function DetalleProducto() {
@@ -46,6 +29,8 @@ function DetalleProducto() {
     );
   }
 
+  const precioFinal = calcularPrecioEfectivo(producto);
+
   const restar = () => setCantidad((actual) => Math.max(1, actual - 1));
   const sumar = () => setCantidad((actual) => actual + 1);
 
@@ -59,9 +44,17 @@ function DetalleProducto() {
     <div className="row g-5 align-items-start">
       <div className="col-md-5">
         <div
-          className="card border-0 shadow-sm rounded-4 d-flex align-items-center justify-content-center overflow-hidden"
+          className="card border-0 shadow-sm rounded-4 d-flex align-items-center justify-content-center overflow-hidden position-relative"
           style={{ background: '#eef2f6', minHeight: '320px' }}
         >
+          {producto.oferta && producto.descuento > 0 && (
+            <span
+              className="badge bg-danger position-absolute m-3 fs-6"
+              style={{ top: 0, right: 0, zIndex: 1 }}
+            >
+              -{producto.descuento}%
+            </span>
+          )}
           {producto.imagen ? (
             <img src={producto.imagen} alt={producto.nombre} className="img-fluid" style={{ maxHeight: '320px', objectFit: 'contain' }} />
           ) : (
@@ -73,9 +66,21 @@ function DetalleProducto() {
       <div className="col-md-7">
         <span className="badge bg-navy mb-2">{producto.categoriaLabel}</span>
         <h1 className="h2 fw-bold text-navy">{producto.nombre}</h1>
-        <p className="text-muted">SKU: {producto.sku}</p>
+        <p className="text-muted">SKU: {producto.sku} · Stock disponible: {producto.stock} unidades</p>
         <p className="lead">{producto.descripcion}</p>
-        <p className="display-6 fw-bold text-navy mb-4">{formatearCLP(producto.precio)}</p>
+
+        {producto.oferta && producto.descuento > 0 ? (
+          <div className="mb-4">
+            <span className="text-muted text-decoration-line-through fs-4 me-3">
+              {formatearCLP(producto.precio)}
+            </span>
+            <span className="display-6 fw-bold text-navy">
+              {formatearCLP(precioFinal)}
+            </span>
+          </div>
+        ) : (
+          <p className="display-6 fw-bold text-navy mb-4">{formatearCLP(producto.precio)}</p>
+        )}
 
         <div className="d-flex align-items-center gap-3 mb-4">
           <label htmlFor="cantidad" className="form-label mb-0 fw-semibold">Cantidad</label>
@@ -93,9 +98,14 @@ function DetalleProducto() {
           </div>
         </div>
 
-        <button className="btn btn-brand btn-lg" onClick={handleAgregar}>
-          <i className="bi bi-cart-plus me-1"></i> Añadir al carrito
-        </button>
+        <div className="d-flex flex-wrap gap-2">
+          <button className="btn btn-brand btn-lg" onClick={handleAgregar}>
+            <i className="bi bi-cart-plus me-1"></i> Añadir al carrito
+          </button>
+          <Link to="/carrito" className="btn btn-outline-primary btn-lg">
+            <i className="bi bi-cart3 me-1"></i> Ver carrito
+          </Link>
+        </div>
 
         <div className="row mt-5">
           <div className="col-12">
@@ -108,7 +118,7 @@ function DetalleProducto() {
 
         {mensajeVisible && (
           <div className="alert alert-success mt-3" role="alert">
-            <i className="bi bi-check-circle me-1"></i> Producto agregado al carrito.
+            <i className="bi bi-check-circle me-1"></i> Producto agregado al carrito exitosamente.
           </div>
         )}
       </div>
