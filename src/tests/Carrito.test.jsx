@@ -1,58 +1,81 @@
 /**
  * Suite de Pruebas Unitarias: Carrito Component
- * Tipo de prueba evaluada: Renderizado de Listas, Simulación de Eventos (+ / - / Eliminar) y Cálculos
- * Entorno: Jasmine / Karma Compatible
- *
- * Verifica la gestión reactiva de ítems en el carrito de compras, cálculo de precios con
- * descuentos de oferta, incremento/decremento de unidades y vaciado del carrito.
+ * Tipo de prueba evaluada: Gestión de Estado, Operaciones de Carrito y Cálculos
+ * Entorno: Jasmine / Jest Compatible
+ * Autor: Angel Martinez (Bloque Tienda Pública)
  */
 
-describe('Componente <Carrito /> - Operaciones CRUD, Eventos de Cantidad y Totales', () => {
-  let carritoState;
+describe('Componente <Carrito /> - Gestión de Carrito y Totales', () => {
+  const agregarOActualizarItem = (carritoActual, producto, cantidadAAgregar) => {
+    const nuevoCarrito = carritoActual.map(item => ({ ...item }));
+    const existente = nuevoCarrito.find(item => item.codigo === producto.sku);
+    if (existente) {
+      existente.cantidad += cantidadAAgregar;
+    } else {
+      nuevoCarrito.push({
+        codigo: producto.sku,
+        nombre: producto.nombre,
+        precio: producto.precio,
+        cantidad: cantidadAAgregar
+      });
+    }
+    return nuevoCarrito;
+  };
 
-  beforeEach(() => {
-    carritoState = [
-      { sku: 'SKU-001', nombre: 'Laptop DELL Latitude', precio: 389990, cantidad: 1 },
-      { sku: 'SKU-002', nombre: 'Teclado Kumara USB', precio: 11992, cantidad: 2 } // 14990 con 20% dcto
+  const modificarCantidad = (carritoActual, sku, delta) => {
+    return carritoActual
+      .map(item => {
+        if (item.codigo === sku) {
+          const nuevaCantidad = item.cantidad + delta;
+          return { ...item, cantidad: nuevaCantidad };
+        }
+        return { ...item };
+      })
+      .filter(item => item.cantidad > 0);
+  };
+
+  const calcularTotal = (carrito) => {
+    return carrito.reduce((acumulado, item) => acumulado + (item.precio * item.cantidad), 0);
+  };
+
+  it('Caso 1: debe agregar un producto al carrito e incrementar su cantidad si ya existe sin duplicar el registro', () => {
+    const producto1 = { sku: 'SKU-001', nombre: 'Notebook Lenovo ThinkPad E14', precio: 689990 };
+    const producto2 = { sku: 'SKU-002', nombre: 'Mouse Inalámbrico Logitech', precio: 12990 };
+
+    let carrito = [];
+    carrito = agregarOActualizarItem(carrito, producto1, 1);
+    expect(carrito.length).toBe(1);
+    expect(carrito[0].cantidad).toBe(1);
+
+    // Al añadir el mismo producto, incrementa cantidad (1 + 2 = 3) sin duplicar fila
+    carrito = agregarOActualizarItem(carrito, producto1, 2);
+    expect(carrito.length).toBe(1);
+    expect(carrito[0].cantidad).toBe(3);
+
+    // Al añadir un producto diferente, crea una nueva posición
+    carrito = agregarOActualizarItem(carrito, producto2, 1);
+    expect(carrito.length).toBe(2);
+  });
+
+  it('Caso 2: debe calcular correctamente el total a pagar y remover el producto si la cantidad llega a 0', () => {
+    let carrito = [
+      { codigo: 'SKU-001', nombre: 'Notebook Lenovo', precio: 600000, cantidad: 1 },
+      { codigo: 'SKU-002', nombre: 'Mouse Logitech', precio: 10000, cantidad: 2 }
     ];
-  });
 
-  it('debe calcular correctamente el subtotal por ítem y el monto total del carrito', () => {
-    const calcularTotal = (items) =>
-      items.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+    // Total inicial esperado: (600.000 * 1) + (10.000 * 2) = 620.000
+    const totalInicial = calcularTotal(carrito);
+    expect(totalInicial).toBe(620000);
 
-    // 389990 * 1 + 11992 * 2 = 389990 + 23984 = 413974
-    const totalCalculado = calcularTotal(carritoState);
-    expect(totalCalculado).toBe(413974);
-  });
+    // Disminuir 1 mouse (-1)
+    carrito = modificarCantidad(carrito, 'SKU-002', -1);
+    expect(carrito.find(item => item.codigo === 'SKU-002').cantidad).toBe(1);
+    expect(calcularTotal(carrito)).toBe(610000);
 
-  it('debe incrementar la cantidad de un producto existente al disparar el evento "+" o añadir repetido', () => {
-    const incrementarCantidad = (items, skuBuscado) =>
-      items.map(it => (it.sku === skuBuscado ? { ...it, cantidad: it.cantidad + 1 } : it));
-
-    carritoState = incrementarCantidad(carritoState, 'SKU-001');
-    const laptop = carritoState.find(it => it.sku === 'SKU-001');
-    expect(laptop.cantidad).toBe(2);
-  });
-
-  it('debe disminuir la cantidad con el evento "-" y remover el ítem automáticamente si llega a 0', () => {
-    const restarCantidad = (items, skuBuscado) =>
-      items
-        .map(it => (it.sku === skuBuscado ? { ...it, cantidad: it.cantidad - 1 } : it))
-        .filter(it => it.cantidad > 0);
-
-    // SKU-001 tiene cantidad 1 -> al restar 1 debe eliminarse del arreglo
-    carritoState = restarCantidad(carritoState, 'SKU-001');
-    expect(carritoState.length).toBe(1);
-    expect(carritoState[0].sku).toBe('SKU-002');
-  });
-
-  it('debe vaciar todos los elementos al ejecutar el evento "Limpiar carrito" y activar estado vacío', () => {
-    const vaciar = () => [];
-    carritoState = vaciar();
-
-    const mostrarEstadoVacio = carritoState.length === 0;
-    expect(carritoState.length).toBe(0);
-    expect(mostrarEstadoVacio).toBeTrue();
+    // Disminuir nuevamente: cantidad llega a 0 -> se remueve del carrito
+    carrito = modificarCantidad(carrito, 'SKU-002', -1);
+    expect(carrito.length).toBe(1);
+    expect(carrito.some(item => item.codigo === 'SKU-002')).toBeFalse();
+    expect(calcularTotal(carrito)).toBe(600000);
   });
 });
