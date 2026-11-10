@@ -1,11 +1,15 @@
 /**
- * Test Runner Autónomo para LogisTrack (Jasmine-Style)
- * Ejecuta todas las suites unitarias de React sin dependencias externas pesadas.
+ * Test Runner Autónomo para LogisTrack (Jasmine-Style BDD + Spies/Mocks)
+ * Compatible con ES Modules ("type": "module") y sintaxis estándar de Jasmine/Karma.
  * Uso: npm test  O  node src/tests/runner.js
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Colores para la consola
 const RESET = '\x1b[0m';
@@ -20,28 +24,60 @@ let passedSuites = 0;
 let totalTests = 0;
 let passedTests = 0;
 let failedTests = 0;
-let currentSuite = '';
 let currentBeforeEach = null;
 
-// Entorno global simulado tipo Jasmine / Jest
-global.beforeEach = (fn) => {
+// Entorno global simulado tipo Jasmine / Karma (describe, it, beforeEach, spyOn, expect)
+globalThis.beforeEach = (fn) => {
   currentBeforeEach = fn;
 };
 
-global.describe = (suiteName, fn) => {
+globalThis.spyOn = (obj, methodName) => {
+  const original = obj[methodName];
+  const calls = [];
+
+  const spyFn = function (...args) {
+    calls.push(args);
+    return typeof original === 'function' ? original.apply(this, args) : undefined;
+  };
+
+  spyFn.__isSpy = true;
+  spyFn.calls = {
+    count: () => calls.length,
+    allArgs: () => calls,
+    any: () => calls.length > 0
+  };
+  spyFn.and = {
+    returnValue: (val) => {
+      obj[methodName] = function (...args) {
+        calls.push(args);
+        return val;
+      };
+      obj[methodName].__isSpy = true;
+      obj[methodName].calls = spyFn.calls;
+      return obj[methodName];
+    }
+  };
+
+  obj[methodName] = spyFn;
+  return spyFn;
+};
+
+globalThis.describe = (suiteName, fn) => {
   totalSuites++;
-  currentSuite = suiteName;
   currentBeforeEach = null;
+  let fallosAntes = failedTests;
   console.log(`\n${BOLD}${CYAN}● ${suiteName}${RESET}`);
   try {
     fn();
-    passedSuites++;
+    if (failedTests === fallosAntes) {
+      passedSuites++;
+    }
   } catch (err) {
     console.log(`  ${RED}✖ Error en suite: ${err.message}${RESET}`);
   }
 };
 
-global.it = (testName, fn) => {
+globalThis.it = (testName, fn) => {
   totalTests++;
   try {
     if (typeof currentBeforeEach === 'function') {
@@ -57,7 +93,7 @@ global.it = (testName, fn) => {
   }
 };
 
-global.expect = (actual) => ({
+globalThis.expect = (actual) => ({
   toBe: (expected) => {
     if (actual !== expected) {
       throw new Error(`Se esperaba [${expected}] (${typeof expected}) pero se obtuvo [${actual}] (${typeof actual})`);
@@ -92,6 +128,21 @@ global.expect = (actual) => ({
     if (actStr !== expStr) {
       throw new Error(`Se esperaba ${expStr} pero se obtuvo ${actStr}`);
     }
+  },
+  toHaveBeenCalled: () => {
+    if (!actual || !actual.__isSpy || !actual.calls.any()) {
+      throw new Error('Se esperaba que el spy/mock hubiese sido invocado, pero no fue llamado.');
+    }
+  },
+  toHaveBeenCalledWith: (...expectedArgs) => {
+    if (!actual || !actual.__isSpy) {
+      throw new Error('El objetivo evaluado no es un spy de Jasmine.');
+    }
+    const expStr = JSON.stringify(expectedArgs);
+    const coincidencias = actual.calls.allArgs().some((args) => JSON.stringify(args) === expStr);
+    if (!coincidencias) {
+      throw new Error(`Se esperaba llamada con ${expStr} pero se registraron ${JSON.stringify(actual.calls.allArgs())}`);
+    }
   }
 });
 
@@ -104,7 +155,11 @@ const testFiles = [
   'RutaProtegida.test.jsx',
   'AdminProductos.test.jsx',
   'AdminProductoForm.test.jsx',
-  'AdminCategorias.test.jsx'
+  'AdminCategorias.test.jsx',
+  'Login.test.jsx',
+  'Registro.test.jsx',
+  'Carrito.test.jsx',
+  'Checkout.test.jsx'
 ];
 
 const start = Date.now();
@@ -112,7 +167,6 @@ const start = Date.now();
 testFiles.forEach((file) => {
   const fullPath = path.join(__dirname, file);
   if (fs.existsSync(fullPath)) {
-    // Evaluar el código del test
     const code = fs.readFileSync(fullPath, 'utf8');
     try {
       eval(code);
