@@ -159,7 +159,8 @@ const testFiles = [
   'Login.test.jsx',
   'Registro.test.jsx',
   'Carrito.test.jsx',
-  'Checkout.test.jsx'
+  'Checkout.test.jsx',
+  'Contacto.test.jsx'
 ];
 
 const start = Date.now();
