@@ -10,7 +10,12 @@ import Nosotros from './pages/Nosotros';
 import Blog from './pages/Blog';
 import BlogDetalle from './pages/BlogDetalle';
 import Contacto from './pages/Contacto';
-import Proximamente from './pages/Proximamente';
+import Login from './pages/Login';
+import Registro from './pages/Registro';
+import Carrito from './pages/Carrito';
+import Checkout from './pages/Checkout';
+import CompraExitosa from './pages/CompraExitosa';
+import CompraError from './pages/CompraError';
 
 // Componentes y Vistas del Módulo de Administración
 import RutaProtegida from './components/admin/RutaProtegida';
@@ -43,10 +48,12 @@ function App() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogDetalle />} />
         <Route path="/contacto" element={<Contacto />} />
-        <Route path="/login" element={<Proximamente titulo="Iniciar sesión" />} />
-        <Route path="/registro" element={<Proximamente titulo="Registro" />} />
-        <Route path="/carrito" element={<Proximamente titulo="Carrito" />} />
-        <Route path="/checkout" element={<Proximamente titulo="Checkout" />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/registro" element={<Registro />} />
+        <Route path="/carrito" element={<Carrito />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/checkout/exito" element={<CompraExitosa />} />
+        <Route path="/checkout/error" element={<CompraError />} />
       </Route>
 
       {/* Rutas Protegidas del Backoffice Admin (Seguridad Fail-Closed) */}

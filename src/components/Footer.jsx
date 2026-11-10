@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 function Footer() {
   return (
     <footer className="bg-navy text-light pt-5 mt-auto">
@@ -13,16 +15,17 @@ function Footer() {
           <div className="col-lg-4 col-md-6">
             <h4 className="h5 fw-bold text-white mb-3">Navegación Rápida</h4>
             <ul className="list-unstyled">
-              <li className="mb-2"><a href="/">Home</a></li>
-              <li className="mb-2"><a href="/productos">Productos</a></li>
-              <li className="mb-2"><a href="/nosotros">Nosotros</a></li>
-              <li className="mb-2"><a href="/contacto">Contacto</a></li>
+              <li className="mb-2"><Link to="/"><i className="bi bi-chevron-right me-1"></i>Home</Link></li>
+              <li className="mb-2"><Link to="/productos"><i className="bi bi-chevron-right me-1"></i>Productos</Link></li>
+              <li className="mb-2"><Link to="/nosotros"><i className="bi bi-chevron-right me-1"></i>Nosotros</Link></li>
+              <li className="mb-2"><Link to="/contacto"><i className="bi bi-chevron-right me-1"></i>Contacto</Link></li>
             </ul>
           </div>
           <div className="col-lg-4 col-md-12">
             <h4 className="h5 fw-bold text-white mb-3">Contacto</h4>
             <p className="text-secondary small mb-1"><i className="bi bi-telephone me-2"></i>+56 2 2345 6789</p>
             <p className="text-secondary small mb-1"><i className="bi bi-envelope me-2"></i>contacto@logistrack.cl</p>
+            <p className="text-secondary small"><i className="bi bi-clock me-2"></i>Lunes a Viernes 08:30 - 18:30 hrs</p>
           </div>
         </div>
       </div>
