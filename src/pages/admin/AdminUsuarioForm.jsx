@@ -1,29 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  obtenerUsuarioPorRun,
+  obtenerUsuarioPorId,
   crearUsuario,
   actualizarUsuario,
-  validarRunChileno,
-  formatearRunVisual,
-  normalizarRun,
-  ROLES_DISPONIBLES,
-  obtenerRolActivo
-} from '../../data/usuarios';
+  ROLES_USUARIO_BACKEND
+} from '../../services/adminUsuarioService';
+import { obtenerRolActual } from '../../services/authService';
 
 function AdminUsuarioForm() {
-  const { run } = useParams();
+  const { run: idParam } = useParams();
   const navigate = useNavigate();
-  const esEdicion = Boolean(run);
+  const esEdicion = Boolean(idParam);
 
-  const [rolActual] = useState(obtenerRolActivo());
+  const [rolActual] = useState(obtenerRolActual());
 
   const [formData, setFormData] = useState({
-    run: '',
+    username: '',
     nombre: '',
     apellidos: '',
     correo: '',
-    telefono: '',
     rol: 'Cliente'
   });
 
@@ -32,24 +28,24 @@ function AdminUsuarioForm() {
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
-    if (esEdicion) {
-      const u = obtenerUsuarioPorRun(run);
-      if (u) {
+    const cargarUsuario = async () => {
+      if (!esEdicion) return;
+      try {
+        const u = await obtenerUsuarioPorId(idParam);
         setFormData({
-          run: u.run || '',
+          username: u.username || '',
           nombre: u.nombre || '',
           apellidos: u.apellidos || '',
           correo: u.correo || '',
-          telefono: u.telefono || '',
           rol: u.rol || 'Cliente'
         });
-      } else {
-        setErrorGlobal(`No se encontró ningún usuario con el RUN "${run}".`);
+      } catch (err) {
+        setErrorGlobal(err.message || `No se encontró ningún usuario con ID "${idParam}".`);
       }
-    }
-  }, [run, esEdicion]);
+    };
+    cargarUsuario();
+  }, [idParam, esEdicion]);
 
-  // Si no es Administrador, bloquear acceso
   if (rolActual === 'Vendedor') {
     return (
       <div className="alert alert-danger shadow-sm py-4 text-center">
@@ -66,7 +62,6 @@ function AdminUsuarioForm() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
     if (errores[name]) {
       setErrores((prev) => ({ ...prev, [name]: '' }));
     }
@@ -74,63 +69,40 @@ function AdminUsuarioForm() {
 
   const validarFormulario = () => {
     const nuevosErrores = {};
-
-    // Validar RUN
-    const runLimpio = normalizarRun(formData.run);
-    if (!runLimpio) {
-      nuevosErrores.run = 'El RUN es obligatorio.';
-    } else if (!esEdicion && !validarRunChileno(runLimpio)) {
-      nuevosErrores.run = 'El RUN ingresado no es válido (verifique formato y dígito verificador).';
+    if (!formData.username.trim() || formData.username.trim().length < 3) {
+      nuevosErrores.username = 'El username debe tener al menos 3 caracteres.';
     }
-
-    if (!formData.nombre.trim()) {
-      nuevosErrores.nombre = 'El nombre es obligatorio.';
-    } else if (formData.nombre.trim().length < 2) {
+    if (!formData.nombre.trim() || formData.nombre.trim().length < 2) {
       nuevosErrores.nombre = 'El nombre debe tener al menos 2 caracteres.';
     }
-
-    if (!formData.apellidos.trim()) {
-      nuevosErrores.apellidos = 'Los apellidos son obligatorios.';
-    } else if (formData.apellidos.trim().length < 2) {
-      nuevosErrores.apellidos = 'Los apellidos deben tener al menos 2 caracteres.';
+    if (!formData.apellidos.trim() || formData.apellidos.trim().length < 2) {
+      nuevosErrores.apellidos = 'El apellido es obligatorio.';
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.correo.trim()) {
-      nuevosErrores.correo = 'El correo electrónico es obligatorio.';
-    } else if (!emailRegex.test(formData.correo.trim())) {
-      nuevosErrores.correo = 'El formato del correo electrónico no es válido.';
+    if (!formData.correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) {
+      nuevosErrores.correo = 'Ingresa un correo electrónico válido.';
     }
-
-    if (!formData.rol) {
-      nuevosErrores.rol = 'Debes asignar un rol al usuario.';
-    }
-
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validarFormulario()) {
-      setErrorGlobal('Por favor corrige los campos marcados en rojo antes de guardar.');
+      setErrorGlobal('Por favor corrige los errores marcados antes de guardar.');
       return;
     }
 
     try {
       setGuardando(true);
       setErrorGlobal('');
-
       if (esEdicion) {
-        actualizarUsuario(run, formData);
+        await actualizarUsuario(idParam, formData);
       } else {
-        crearUsuario(formData);
+        await crearUsuario(formData);
       }
-
       navigate('/admin/usuarios', { replace: true });
     } catch (err) {
-      setErrorGlobal(err.message || 'Error al guardar el usuario.');
+      setErrorGlobal(err.message || 'Ocurrió un error al guardar el usuario.');
     } finally {
       setGuardando(false);
     }
@@ -138,13 +110,12 @@ function AdminUsuarioForm() {
 
   return (
     <div>
-      {/* Breadcrumb */}
       <nav aria-label="breadcrumb" className="mb-3">
         <ol className="breadcrumb small">
           <li className="breadcrumb-item"><Link to="/admin">Dashboard</Link></li>
           <li className="breadcrumb-item"><Link to="/admin/usuarios">Usuarios</Link></li>
           <li className="breadcrumb-item active" aria-current="page">
-            {esEdicion ? `Editar (${formatearRunVisual(run)})` : 'Nuevo Usuario'}
+            {esEdicion ? `Editar (#${idParam})` : 'Nuevo Usuario'}
           </li>
         </ol>
       </nav>
@@ -168,27 +139,19 @@ function AdminUsuarioForm() {
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="row g-3">
-              {/* RUN */}
               <div className="col-12 col-md-4">
-                <label className="form-label fw-semibold small">RUN (Identificador Único) *</label>
+                <label className="form-label fw-semibold small">Username *</label>
                 <input
                   type="text"
-                  name="run"
-                  className={`form-control font-monospace ${errores.run ? 'is-invalid' : ''}`}
-                  placeholder="Ej: 19011022K"
-                  value={formData.run}
+                  name="username"
+                  className={`form-control font-monospace ${errores.username ? 'is-invalid' : ''}`}
+                  placeholder="Ej: jperez"
+                  value={formData.username}
                   onChange={handleChange}
-                  disabled={esEdicion}
                 />
-                {errores.run && <div className="invalid-feedback">{errores.run}</div>}
-                {esEdicion ? (
-                  <small className="text-muted">El RUN es la clave primaria y no se puede modificar.</small>
-                ) : (
-                  <small className="text-muted">Ingresa sin puntos ni guión (ej: 19011022K).</small>
-                )}
+                {errores.username && <div className="invalid-feedback">{errores.username}</div>}
               </div>
 
-              {/* Nombre */}
               <div className="col-12 col-md-4">
                 <label className="form-label fw-semibold small">Nombre *</label>
                 <input
@@ -202,9 +165,8 @@ function AdminUsuarioForm() {
                 {errores.nombre && <div className="invalid-feedback">{errores.nombre}</div>}
               </div>
 
-              {/* Apellidos */}
               <div className="col-12 col-md-4">
-                <label className="form-label fw-semibold small">Apellidos *</label>
+                <label className="form-label fw-semibold small">Apellido *</label>
                 <input
                   type="text"
                   name="apellidos"
@@ -216,8 +178,7 @@ function AdminUsuarioForm() {
                 {errores.apellidos && <div className="invalid-feedback">{errores.apellidos}</div>}
               </div>
 
-              {/* Correo Electrónico */}
-              <div className="col-12 col-md-5">
+              <div className="col-12 col-md-6">
                 <label className="form-label fw-semibold small">Correo Electrónico *</label>
                 <div className="input-group">
                   <span className="input-group-text"><i className="bi bi-envelope"></i></span>
@@ -233,53 +194,29 @@ function AdminUsuarioForm() {
                 </div>
               </div>
 
-              {/* Teléfono */}
-              <div className="col-12 col-md-4">
-                <label className="form-label fw-semibold small">Teléfono de Contacto</label>
-                <div className="input-group">
-                  <span className="input-group-text"><i className="bi bi-telephone"></i></span>
-                  <input
-                    type="text"
-                    name="telefono"
-                    className="form-control"
-                    placeholder="+56 9 1234 5678"
-                    value={formData.telefono}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              {/* Rol Asignado */}
-              <div className="col-12 col-md-3">
-                <label className="form-label fw-semibold small">Rol en el Sistema *</label>
+              <div className="col-12 col-md-6">
+                <label className="form-label fw-semibold small">Rol Asignado *</label>
                 <select
                   name="rol"
-                  className={`form-select ${errores.rol ? 'is-invalid' : ''}`}
+                  className="form-select"
                   value={formData.rol}
                   onChange={handleChange}
                 >
-                  {ROLES_DISPONIBLES.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
+                  {ROLES_USUARIO_BACKEND.map((r) => (
+                    <option key={r.value} value={r.label}>
+                      {r.label} ({r.value})
                     </option>
                   ))}
                 </select>
-                {errores.rol && <div className="invalid-feedback">{errores.rol}</div>}
               </div>
             </div>
 
-            {/* Acciones */}
             <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-              <Link to="/admin/usuarios" className="btn btn-outline-secondary btn-sm">
+              <Link to="/admin/usuarios" className="btn btn-outline-secondary">
                 Cancelar
               </Link>
-              <button
-                type="submit"
-                className="btn btn-primary btn-sm fw-semibold d-flex align-items-center gap-1"
-                disabled={guardando}
-              >
-                <i className="bi bi-save"></i>
-                {guardando ? 'Guardando...' : esEdicion ? 'Actualizar Cuenta' : 'Crear Usuario'}
+              <button type="submit" className="btn btn-primary fw-semibold px-4" disabled={guardando}>
+                {guardando ? 'Guardando...' : esEdicion ? 'Actualizar Usuario' : 'Registrar Usuario'}
               </button>
             </div>
           </form>

@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { obtenerRolActivo, establecerRolActivo, ROLES_DISPONIBLES } from '../../data/usuarios';
+import {
+  obtenerRolActual,
+  obtenerUsuarioAutenticado,
+  estaAutenticado,
+  logout
+} from '../../services/authService';
 
 const MAPA_TITULOS = {
   '/admin': { titulo: 'Dashboard General', subtitulo: 'Resumen operativo del inventario, ventas y clientes' },
@@ -16,26 +21,27 @@ const MAPA_TITULOS = {
 };
 
 function AdminTopbar() {
-  const [rolActual, setRolActual] = useState(obtenerRolActivo());
+  const [rolActual, setRolActual] = useState(obtenerRolActual());
+  const [usuarioAuth, setUsuarioAuth] = useState(obtenerUsuarioAutenticado());
+  const [autenticado, setAutenticado] = useState(estaAutenticado());
   const location = useLocation();
 
   useEffect(() => {
-    const sincronizarRol = () => setRolActual(obtenerRolActivo());
-    window.addEventListener('logistrack_rol_cambiado', sincronizarRol);
-    window.addEventListener('storage', sincronizarRol);
+    const sincronizar = () => {
+      setRolActual(obtenerRolActual());
+      setUsuarioAuth(obtenerUsuarioAutenticado());
+      setAutenticado(estaAutenticado());
+    };
+    window.addEventListener('logistrack_rol_cambiado', sincronizar);
+    window.addEventListener('logistrack_auth_cambiado', sincronizar);
+    window.addEventListener('storage', sincronizar);
     return () => {
-      window.removeEventListener('logistrack_rol_cambiado', sincronizarRol);
-      window.removeEventListener('storage', sincronizarRol);
+      window.removeEventListener('logistrack_rol_cambiado', sincronizar);
+      window.removeEventListener('logistrack_auth_cambiado', sincronizar);
+      window.removeEventListener('storage', sincronizar);
     };
   }, []);
 
-  const handleCambioRol = (e) => {
-    const nuevoRol = e.target.value;
-    establecerRolActivo(nuevoRol);
-    setRolActual(nuevoRol);
-  };
-
-  // Buscar título según la ruta actual
   const infoRuta = Object.entries(MAPA_TITULOS).find(([ruta]) =>
     location.pathname === ruta || location.pathname.startsWith(ruta + '/')
   )?.[1] || { titulo: 'Panel de Administración', subtitulo: 'Módulo de control LogisTrack' };
@@ -48,34 +54,36 @@ function AdminTopbar() {
           <small className="text-muted">{infoRuta.subtitulo}</small>
         </div>
 
-        {/* Simulador de Rol Activo */}
-        <div className="d-flex align-items-center gap-2">
-          <span className="badge bg-light text-dark border d-flex align-items-center gap-1">
-            <i className="bi bi-person-gear"></i> Rol activo:
-          </span>
-          <select
-            id="select-rol-simulado"
-            className="form-select form-select-sm fw-semibold"
-            style={{ width: '160px' }}
-            value={rolActual}
-            onChange={handleCambioRol}
-            aria-label="Seleccionar rol simulado"
-          >
-            {ROLES_DISPONIBLES.map((rol) => (
-              <option key={rol} value={rol}>
-                {rol}
-              </option>
-            ))}
-          </select>
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          {autenticado && usuarioAuth ? (
+            <>
+              <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-2">
+                <i className="bi bi-shield-lock-fill me-1"></i>
+                JWT: <strong>{usuarioAuth.username}</strong> ({rolActual})
+              </span>
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm"
+                onClick={logout}
+                title="Cerrar sesión JWT"
+              >
+                <i className="bi bi-box-arrow-right me-1"></i> Cerrar sesión
+              </button>
+            </>
+          ) : (
+            <span className="badge bg-warning bg-opacity-10 text-dark border border-warning px-2 py-2">
+              <i className="bi bi-exclamation-circle me-1 text-warning"></i>
+              Sin sesión JWT activa
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Banner de alerta informativo según el rol */}
-      {rolActual === 'Vendedor' && (
+      {autenticado && rolActual === 'Vendedor' && (
         <div className="alert alert-info py-2 px-3 mt-3 mb-0 small d-flex align-items-center gap-2" role="alert">
           <i className="bi bi-info-circle-fill fs-6"></i>
           <div>
-            <strong>Modo Vendedor:</strong> Acceso de consulta a catálogo y órdenes. La gestión de usuarios y acciones destructivas están restringidas.
+            <strong>Modo Vendedor:</strong> Acceso de consulta a catálogo de productos y órdenes. La gestión de usuarios, categorías, reportes y acciones destructivas están restringidas.
           </div>
         </div>
       )}

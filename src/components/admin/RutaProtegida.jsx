@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { obtenerRolActivo } from '../../data/usuarios';
+import { obtenerRolActual } from '../../services/authService';
 
 /**
  * Componente Guard de Roles con enfoque Fail-Closed.
@@ -23,19 +23,20 @@ function RutaProtegida({
   mensajeAlerta = 'Acceso Denegado: No tienes permisos para acceder a esta sección.',
   children
 }) {
-  const [rolActual, setRolActual] = useState(obtenerRolActivo());
+  const [rolActual, setRolActual] = useState(obtenerRolActual());
 
   useEffect(() => {
-    // Sincronización en tiempo real ante cambios de rol en sessionStorage/localStorage
     const sincronizarRol = () => {
-      setRolActual(obtenerRolActivo());
+      setRolActual(obtenerRolActual());
     };
 
     window.addEventListener('logistrack_rol_cambiado', sincronizarRol);
+    window.addEventListener('logistrack_auth_cambiado', sincronizarRol);
     window.addEventListener('storage', sincronizarRol);
 
     return () => {
       window.removeEventListener('logistrack_rol_cambiado', sincronizarRol);
+      window.removeEventListener('logistrack_auth_cambiado', sincronizarRol);
       window.removeEventListener('storage', sincronizarRol);
     };
   }, []);

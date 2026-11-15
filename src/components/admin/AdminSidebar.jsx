@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { obtenerRolActivo } from '../../data/usuarios';
+import { obtenerRolActual } from '../../services/authService';
 
 function AdminSidebar() {
-  const [rolActual, setRolActual] = useState(obtenerRolActivo());
+  const [rolActual, setRolActual] = useState(obtenerRolActual());
 
   useEffect(() => {
-    const actualizarRol = () => setRolActual(obtenerRolActivo());
+    const actualizarRol = () => setRolActual(obtenerRolActual());
     window.addEventListener('logistrack_rol_cambiado', actualizarRol);
+    window.addEventListener('logistrack_auth_cambiado', actualizarRol);
     window.addEventListener('storage', actualizarRol);
     return () => {
       window.removeEventListener('logistrack_rol_cambiado', actualizarRol);
+      window.removeEventListener('logistrack_auth_cambiado', actualizarRol);
       window.removeEventListener('storage', actualizarRol);
     };
   }, []);
@@ -19,7 +21,6 @@ function AdminSidebar() {
 
   return (
     <aside className="admin-sidebar shadow-sm">
-      {/* Brand Header */}
       <div className="p-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
         <i className="bi bi-box-seam-fill fs-3 text-warning"></i>
         <div>
@@ -28,15 +29,16 @@ function AdminSidebar() {
         </div>
       </div>
 
-      {/* Navegación Principal */}
       <nav className="nav flex-column mt-3 flex-grow-1">
-        <NavLink
-          end
-          to="/admin"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-        >
-          <i className="bi bi-speedometer2 me-2"></i> Dashboard
-        </NavLink>
+        {esAdmin && (
+          <NavLink
+            end
+            to="/admin"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <i className="bi bi-speedometer2 me-2"></i> Dashboard
+          </NavLink>
+        )}
 
         <NavLink
           to="/admin/productos"
@@ -45,19 +47,23 @@ function AdminSidebar() {
           <i className="bi bi-boxes me-2"></i> Productos
         </NavLink>
 
-        <NavLink
-          to="/admin/productos/criticos"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-        >
-          <i className="bi bi-exclamation-triangle me-2 text-warning"></i> Stock Crítico
-        </NavLink>
+        {esAdmin && (
+          <NavLink
+            to="/admin/productos/criticos"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <i className="bi bi-exclamation-triangle me-2 text-warning"></i> Stock Crítico
+          </NavLink>
+        )}
 
-        <NavLink
-          to="/admin/categorias"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-        >
-          <i className="bi bi-tags me-2"></i> Categorías
-        </NavLink>
+        {esAdmin && (
+          <NavLink
+            to="/admin/categorias"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <i className="bi bi-tags me-2"></i> Categorías
+          </NavLink>
+        )}
 
         <NavLink
           to="/admin/ordenes"
@@ -66,7 +72,6 @@ function AdminSidebar() {
           <i className="bi bi-receipt me-2"></i> Órdenes
         </NavLink>
 
-        {/* Módulo de Usuarios solo visible para Administrador */}
         {esAdmin && (
           <NavLink
             to="/admin/usuarios"
@@ -76,12 +81,14 @@ function AdminSidebar() {
           </NavLink>
         )}
 
-        <NavLink
-          to="/admin/reportes"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-        >
-          <i className="bi bi-graph-up-arrow me-2"></i> Reportes
-        </NavLink>
+        {esAdmin && (
+          <NavLink
+            to="/admin/reportes"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <i className="bi bi-graph-up-arrow me-2"></i> Reportes
+          </NavLink>
+        )}
 
         <NavLink
           to="/admin/perfil"
@@ -91,7 +98,6 @@ function AdminSidebar() {
         </NavLink>
       </nav>
 
-      {/* Botón Inferior para volver a la tienda */}
       <div className="p-3 border-top border-secondary border-opacity-25">
         <Link
           to="/"

@@ -1,43 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import StatCard from '../../components/admin/StatCard';
-import { obtenerProductos, obtenerProductosCriticos } from '../../data/productos';
-import { obtenerOrdenes } from '../../data/ordenes';
-import { obtenerUsuarios, obtenerRolActivo } from '../../data/usuarios';
+import { obtenerProductos } from '../../services/adminProductoService';
+import { obtenerOrdenes } from '../../services/adminOrdenService';
+import { obtenerUsuarios } from '../../services/adminUsuarioService';
+import { obtenerRolActual } from '../../services/authService';
 
 function AdminDashboard() {
   const [productos, setProductos] = useState([]);
   const [criticos, setCriticos] = useState([]);
   const [ordenes, setOrdenes] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
-  const [rolActual, setRolActual] = useState(obtenerRolActivo());
+  const [rolActual, setRolActual] = useState(obtenerRolActual());
+  const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState('');
 
   useEffect(() => {
-    const cargarDatos = () => {
-      setProductos(obtenerProductos());
-      setCriticos(obtenerProductosCriticos());
-      setOrdenes(obtenerOrdenes());
-      setUsuarios(obtenerUsuarios());
-      setRolActual(obtenerRolActivo());
+    const cargarDatos = async () => {
+      setCargando(true);
+      setErrorCarga('');
+      const rol = obtenerRolActual();
+      setRolActual(rol);
+      try {
+        const [prods, ords, usrs] = await Promise.all([
+          obtenerProductos(),
+          obtenerOrdenes(),
+          rol === 'Administrador' ? obtenerUsuarios().catch(() => []) : Promise.resolve([])
+        ]);
+        setProductos(prods);
+        setCriticos(prods.filter((p) => Number(p.stock) <= Number(p.stockCritico)));
+        setOrdenes(ords);
+        setUsuarios(usrs);
+      } catch (err) {
+        setErrorCarga(err.message || 'Error al cargar métricas desde el backend.');
+      } finally {
+        setCargando(false);
+      }
     };
 
     cargarDatos();
 
-    // Sincronizar en tiempo real si hay cambios en storage o cambio de rol
     window.addEventListener('logistrack_rol_cambiado', cargarDatos);
-    window.addEventListener('storage', cargarDatos);
-
+    window.addEventListener('logistrack_auth_cambiado', cargarDatos);
     return () => {
       window.removeEventListener('logistrack_rol_cambiado', cargarDatos);
-      window.removeEventListener('storage', cargarDatos);
+      window.removeEventListener('logistrack_auth_cambiado', cargarDatos);
     };
   }, []);
 
   const totalVentas = ordenes.reduce((acc, ord) => acc + (Number(ord.total) || 0), 0);
   const esAdmin = rolActual === 'Administrador';
 
+  if (cargando) {
+    return (
+      <div className="text-center py-5 text-muted">
+        <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+        Cargando métricas en tiempo real desde microservicios...
+      </div>
+    );
+  }
+
   return (
     <div>
+      {errorCarga && (
+        <div className="alert alert-danger shadow-sm mb-4" role="alert">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          {errorCarga}
+        </div>
+      )}
       {/* 1. Fila de Tarjetas de Métricas (KPIs) usando StatCard */}
       <div className="row g-3 mb-4">
         <div className="col-12 col-sm-6 col-xl-3">

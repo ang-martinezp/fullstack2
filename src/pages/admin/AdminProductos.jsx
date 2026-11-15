@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   obtenerProductos,
-  eliminarProducto,
-  obtenerProductosCriticos
-} from '../../data/productos';
-import { obtenerCategorias } from '../../data/categorias';
-import { obtenerRolActivo } from '../../data/usuarios';
+  eliminarProducto
+} from '../../services/adminProductoService';
+import { obtenerCategorias } from '../../services/adminCategoriaService';
+import { obtenerRolActual } from '../../services/authService';
 
 function AdminProductos() {
   const location = useLocation();
@@ -16,28 +15,42 @@ function AdminProductos() {
   const [categorias, setCategorias] = useState([]);
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
-  const [rolActual, setRolActual] = useState(obtenerRolActivo());
+  const [rolActual, setRolActual] = useState(obtenerRolActual());
   const [productoAEliminar, setProductoAEliminar] = useState(null);
   const [alertaExito, setAlertaExito] = useState('');
+  const [errorAccion, setErrorAccion] = useState('');
+  const [cargando, setCargando] = useState(true);
 
-  const cargarDatos = () => {
-    setProductos(obtenerProductos());
-    setCategorias(obtenerCategorias());
-    setRolActual(obtenerRolActivo());
+  const cargarDatos = async () => {
+    setCargando(true);
+    setErrorAccion('');
+    try {
+      const [prods, cats] = await Promise.all([
+        obtenerProductos(),
+        obtenerCategorias()
+      ]);
+      setProductos(prods);
+      setCategorias(cats);
+      setRolActual(obtenerRolActual());
+    } catch (err) {
+      setErrorAccion(err.message || 'Error al cargar catálogo de productos.');
+    } finally {
+      setCargando(false);
+    }
   };
 
   useEffect(() => {
     cargarDatos();
     window.addEventListener('logistrack_rol_cambiado', cargarDatos);
-    window.addEventListener('storage', cargarDatos);
+    window.addEventListener('logistrack_auth_cambiado', cargarDatos);
     return () => {
       window.removeEventListener('logistrack_rol_cambiado', cargarDatos);
-      window.removeEventListener('storage', cargarDatos);
+      window.removeEventListener('logistrack_auth_cambiado', cargarDatos);
     };
   }, []);
 
   const esAdmin = rolActual === 'Administrador';
-  const criticos = obtenerProductosCriticos();
+  const criticos = productos.filter((p) => Number(p.stock) <= Number(p.stockCritico));
 
   // Filtrado reactivo en vivo
   const productosFiltrados = productos.filter((p) => {
@@ -56,18 +69,36 @@ function AdminProductos() {
     return coincideTexto && coincideCategoria;
   });
 
-  const handleConfirmarEliminar = () => {
+  const handleConfirmarEliminar = async () => {
     if (!productoAEliminar) return;
-    const sku = productoAEliminar.sku || productoAEliminar.codigo;
-    eliminarProducto(sku);
-    setAlertaExito(`Producto "${productoAEliminar.nombre}" eliminado correctamente.`);
-    setProductoAEliminar(null);
-    cargarDatos();
-    setTimeout(() => setAlertaExito(''), 4000);
+    setErrorAccion('');
+    try {
+      await eliminarProducto(productoAEliminar.id);
+      setAlertaExito(`Producto "${productoAEliminar.nombre}" dado de baja correctamente.`);
+      setProductoAEliminar(null);
+      await cargarDatos();
+      setTimeout(() => setAlertaExito(''), 4000);
+    } catch (err) {
+      setErrorAccion(err.message || 'No se pudo eliminar el producto.');
+      setProductoAEliminar(null);
+    }
   };
 
   return (
     <div>
+      {errorAccion && (
+        <div className="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          {errorAccion}
+          <button type="button" className="btn-close" onClick={() => setErrorAccion('')}></button>
+        </div>
+      )}
+      {cargando && (
+        <div className="text-muted small mb-2">
+          <span className="spinner-border spinner-border-sm me-2"></span>
+          Sincronizando productos con el backend...
+        </div>
+      )}
       {/* Alerta de Seguridad / Guard Fail-Closed (si viene redirigido sin permiso) */}
       {alertaAcceso && (
         <div className="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">

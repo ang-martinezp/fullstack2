@@ -1,24 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { obtenerUsuarioPorRun, formatearRunVisual } from '../../data/usuarios';
-import { obtenerOrdenesPorUsuario } from '../../data/ordenes';
+import { obtenerUsuarioPorId } from '../../services/adminUsuarioService';
+import { obtenerOrdenes } from '../../services/adminOrdenService';
 
 function AdminUsuarioHistorial() {
-  const { run } = useParams();
+  const { run: idParam } = useParams();
   const [usuario, setUsuario] = useState(null);
   const [ordenes, setOrdenes] = useState([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    if (run) {
-      const u = obtenerUsuarioPorRun(run);
-      setUsuario(u);
-
-      const ords = obtenerOrdenesPorUsuario(run);
-      setOrdenes(ords);
-    }
-    setCargando(false);
-  }, [run]);
+    const cargar = async () => {
+      if (!idParam) {
+        setCargando(false);
+        return;
+      }
+      try {
+        const [u, todasOrdenes] = await Promise.all([
+          obtenerUsuarioPorId(idParam),
+          obtenerOrdenes().catch(() => [])
+        ]);
+        setUsuario(u);
+        setOrdenes(
+          todasOrdenes.filter(
+            (o) =>
+              o.cliente &&
+              u.nombre &&
+              o.cliente.toLowerCase().includes(u.nombre.toLowerCase())
+          )
+        );
+      } catch {
+        setUsuario(null);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargar();
+  }, [idParam]);
 
   if (cargando) {
     return <div className="text-center py-5 text-muted">Cargando historial de compras...</div>;
@@ -29,7 +47,7 @@ function AdminUsuarioHistorial() {
       <div className="alert alert-warning py-4 text-center shadow-sm">
         <i className="bi bi-person-x-fill fs-1 text-warning d-block mb-2"></i>
         <h5 className="fw-bold">Usuario no encontrado</h5>
-        <p className="mb-3">No existe ningún usuario registrado con el identificador "{run}".</p>
+        <p className="mb-3">No existe ningún usuario registrado con el identificador "{idParam}".</p>
         <Link to="/admin/usuarios" className="btn btn-outline-primary btn-sm">
           Volver a Usuarios
         </Link>
@@ -48,7 +66,7 @@ function AdminUsuarioHistorial() {
           <li className="breadcrumb-item"><Link to="/admin">Dashboard</Link></li>
           <li className="breadcrumb-item"><Link to="/admin/usuarios">Usuarios</Link></li>
           <li className="breadcrumb-item active" aria-current="page">
-            Historial de Compras ({formatearRunVisual(usuario.run)})
+            Historial de Compras (@{usuario.username})
           </li>
         </ol>
       </nav>
@@ -64,11 +82,10 @@ function AdminUsuarioHistorial() {
               <div>
                 <h5 className="fw-bold text-dark m-0">{usuario.nombre} {usuario.apellidos}</h5>
                 <span className="font-monospace text-secondary small d-block">
-                  RUN: {formatearRunVisual(usuario.run)}
+                  @{usuario.username} · ID #{usuario.id}
                 </span>
                 <small className="text-muted">
                   <i className="bi bi-envelope me-1"></i>{usuario.correo}
-                  {usuario.telefono && <span className="ms-2"><i className="bi bi-telephone me-1"></i>{usuario.telefono}</span>}
                 </small>
               </div>
             </div>

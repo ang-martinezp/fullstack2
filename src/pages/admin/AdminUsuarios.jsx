@@ -1,40 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   obtenerUsuarios,
-  eliminarUsuario,
-  formatearRunVisual,
-  obtenerRolActivo
-} from '../../data/usuarios';
-import { obtenerOrdenes } from '../../data/ordenes';
+  cambiarEstadoUsuario
+} from '../../services/adminUsuarioService';
+import { obtenerOrdenes } from '../../services/adminOrdenService';
+import { obtenerRolActual } from '../../services/authService';
 
 function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [ordenes, setOrdenes] = useState([]);
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroRol, setFiltroRol] = useState('todos');
-  const [rolActual, setRolActual] = useState(obtenerRolActivo());
+  const [rolActual, setRolActual] = useState(obtenerRolActual());
   const [usuarioAEliminar, setUsuarioAEliminar] = useState(null);
   const [alertaExito, setAlertaExito] = useState('');
   const [errorEliminar, setErrorEliminar] = useState('');
 
-  const cargarDatos = () => {
-    setUsuarios(obtenerUsuarios());
-    setOrdenes(obtenerOrdenes());
-    setRolActual(obtenerRolActivo());
+  const cargarDatos = async () => {
+    try {
+      const [usrs, ords] = await Promise.all([
+        obtenerUsuarios(),
+        obtenerOrdenes().catch(() => [])
+      ]);
+      setUsuarios(usrs);
+      setOrdenes(ords);
+      setRolActual(obtenerRolActual());
+    } catch (err) {
+      setErrorEliminar(err.message || 'Error al cargar usuarios.');
+    }
   };
 
   useEffect(() => {
     cargarDatos();
     window.addEventListener('logistrack_rol_cambiado', cargarDatos);
-    window.addEventListener('storage', cargarDatos);
+    window.addEventListener('logistrack_auth_cambiado', cargarDatos);
     return () => {
       window.removeEventListener('logistrack_rol_cambiado', cargarDatos);
-      window.removeEventListener('storage', cargarDatos);
+      window.removeEventListener('logistrack_auth_cambiado', cargarDatos);
     };
   }, []);
 
-  // Control estricto de roles (fail-closed): Si es Vendedor, no tiene acceso
   if (rolActual === 'Vendedor') {
     return (
       <div className="alert alert-danger shadow-sm py-4 text-center">
@@ -48,16 +54,12 @@ function AdminUsuarios() {
     );
   }
 
-  // Contar órdenes por usuario
-  const contarComprasUsuario = (run, nombre) => {
+  const contarComprasUsuario = (nombre) => {
     return ordenes.filter(
-      (o) =>
-        (o.clienteRun && o.clienteRun.toUpperCase() === run.toUpperCase()) ||
-        (o.cliente && o.cliente.toLowerCase().includes(nombre.toLowerCase()))
+      (o) => o.cliente && nombre && o.cliente.toLowerCase().includes(nombre.toLowerCase())
     ).length;
   };
 
-  // Filtrado reactivo en vivo
   const usuariosFiltrados = usuarios.filter((u) => {
     const texto = filtroTexto.toLowerCase().trim();
     const coincideTexto =
@@ -65,28 +67,32 @@ function AdminUsuarios() {
       u.nombre.toLowerCase().includes(texto) ||
       u.apellidos.toLowerCase().includes(texto) ||
       u.correo.toLowerCase().includes(texto) ||
-      u.run.toLowerCase().includes(texto);
+      u.username.toLowerCase().includes(texto);
 
     const coincideRol = filtroRol === 'todos' || u.rol === filtroRol;
 
     return coincideTexto && coincideRol;
   });
 
-  const handleConfirmarEliminar = () => {
+  const handleConfirmarEliminar = async () => {
     if (!usuarioAEliminar) return;
 
-    // Validación: No permitir autoeliminarse si es el usuario activo
-    if (usuarioAEliminar.rol === 'Administrador' && usuarios.filter((u) => u.rol === 'Administrador').length <= 1) {
-      setErrorEliminar('No puedes eliminar el único Administrador del sistema.');
+    if (usuarioAEliminar.rol === 'Administrador' && usuarios.filter((u) => u.rol === 'Administrador' && u.activo).length <= 1) {
+      setErrorEliminar('No puedes desactivar el único Administrador activo del sistema.');
       return;
     }
 
-    eliminarUsuario(usuarioAEliminar.run);
-    setAlertaExito(`Usuario ${usuarioAEliminar.nombre} ${usuarioAEliminar.apellidos} eliminado.`);
-    setUsuarioAEliminar(null);
-    setErrorEliminar('');
-    cargarDatos();
-    setTimeout(() => setAlertaExito(''), 4000);
+    try {
+      const nuevoEstado = usuarioAEliminar.activo ? 'INACTIVO' : 'ACTIVO';
+      await cambiarEstadoUsuario(usuarioAEliminar.id, nuevoEstado);
+      setAlertaExito(`Usuario ${usuarioAEliminar.nombre} ${usuarioAEliminar.apellidos} marcado como ${nuevoEstado}.`);
+      setUsuarioAEliminar(null);
+      setErrorEliminar('');
+      await cargarDatos();
+      setTimeout(() => setAlertaExito(''), 4000);
+    } catch (err) {
+      setErrorEliminar(err.message || 'No se pudo cambiar el estado del usuario.');
+    }
   };
 
   return (
@@ -169,10 +175,10 @@ function AdminUsuarios() {
             <table className="table table-hover align-middle mb-0">
               <thead className="table-light">
                 <tr>
-                  <th className="ps-3">RUN</th>
+                  <th className="ps-3">Username</th>
                   <th>Usuario</th>
                   <th>Correo Electrónico</th>
-                  <th>Teléfono</th>
+                  <th>Estado</th>
                   <th className="text-center">Rol Asignado</th>
                   <th className="text-center">Historial</th>
                   <th className="text-end pe-3" style={{ width: '150px' }}>Acciones</th>
@@ -188,33 +194,35 @@ function AdminUsuarios() {
                   </tr>
                 ) : (
                   usuariosFiltrados.map((u) => {
-                    const cantCompras = contarComprasUsuario(u.run, u.nombre);
+                    const cantCompras = contarComprasUsuario(u.nombre);
                     let badgeRol = 'bg-secondary';
                     if (u.rol === 'Administrador') badgeRol = 'bg-primary';
                     if (u.rol === 'Vendedor') badgeRol = 'bg-info text-dark';
                     if (u.rol === 'Cliente') badgeRol = 'bg-success';
 
                     return (
-                      <tr key={u.run}>
+                      <tr key={u.id}>
                         <td className="ps-3 font-monospace fw-semibold text-secondary">
-                          {formatearRunVisual(u.run)}
+                          @{u.username}
                         </td>
                         <td>
                           <div className="fw-semibold text-dark">{u.nombre} {u.apellidos}</div>
-                          <small className="text-muted">Reg: {u.fechaRegistro || '2026-03-01'}</small>
+                          <small className="text-muted">ID: #{u.id}</small>
                         </td>
                         <td>
                           <span className="text-dark small">{u.correo}</span>
                         </td>
                         <td>
-                          <small className="text-muted">{u.telefono || 'Sin teléfono'}</small>
+                          <span className={`badge ${u.activo ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'} border`}>
+                            {u.estado}
+                          </span>
                         </td>
                         <td className="text-center">
                           <span className={`badge ${badgeRol} px-3 py-1`}>{u.rol}</span>
                         </td>
                         <td className="text-center">
                           <Link
-                            to={`/admin/usuarios/${u.run}/historial`}
+                            to={`/admin/usuarios/${u.id}/historial`}
                             className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
                             title="Ver Historial de Compras"
                           >
@@ -225,7 +233,7 @@ function AdminUsuarios() {
                         <td className="text-end pe-3">
                           <div className="btn-group btn-group-sm">
                             <Link
-                              to={`/admin/usuarios/editar/${u.run}`}
+                              to={`/admin/usuarios/editar/${u.id}`}
                               className="btn btn-outline-primary"
                               title="Editar Usuario"
                             >
@@ -234,7 +242,7 @@ function AdminUsuarios() {
                             <button
                               type="button"
                               className="btn btn-outline-danger"
-                              title="Eliminar Usuario"
+                              title={u.activo ? 'Desactivar Usuario' : 'Activar Usuario'}
                               onClick={() => {
                                 setUsuarioAEliminar(u);
                                 setErrorEliminar('');
@@ -274,7 +282,7 @@ function AdminUsuarios() {
                 <div className="p-3 bg-light rounded mt-2 border">
                   <strong className="text-dark">{usuarioAEliminar.nombre} {usuarioAEliminar.apellidos}</strong>
                   <div className="small text-muted font-monospace mt-1">
-                    RUN: {formatearRunVisual(usuarioAEliminar.run)} — Rol: {usuarioAEliminar.rol}
+                    @{usuarioAEliminar.username} — Rol: {usuarioAEliminar.rol}
                   </div>
                 </div>
               </div>

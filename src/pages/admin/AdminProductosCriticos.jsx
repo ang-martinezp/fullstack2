@@ -2,52 +2,78 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   obtenerProductosCriticos,
-  actualizarProducto
-} from '../../data/productos';
-import { obtenerRolActivo } from '../../data/usuarios';
+  reponerStock
+} from '../../services/adminProductoService';
+import { obtenerRolActual } from '../../services/authService';
 
 function AdminProductosCriticos() {
   const [criticos, setCriticos] = useState([]);
-  const [rolActual, setRolActual] = useState(obtenerRolActivo());
+  const [rolActual, setRolActual] = useState(obtenerRolActual());
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   const [cantidadReponer, setCantidadReponer] = useState(10);
   const [mensajeExito, setMensajeExito] = useState('');
+  const [errorAccion, setErrorAccion] = useState('');
+  const [cargando, setCargando] = useState(true);
 
-  const cargarDatos = () => {
-    setCriticos(obtenerProductosCriticos());
-    setRolActual(obtenerRolActivo());
+  const cargarDatos = async () => {
+    setCargando(true);
+    setErrorAccion('');
+    try {
+      const lista = await obtenerProductosCriticos();
+      setCriticos(lista);
+      setRolActual(obtenerRolActual());
+    } catch (err) {
+      setErrorAccion(err.message || 'Error al cargar productos en stock crítico.');
+    } finally {
+      setCargando(false);
+    }
   };
 
   useEffect(() => {
     cargarDatos();
     window.addEventListener('logistrack_rol_cambiado', cargarDatos);
-    window.addEventListener('storage', cargarDatos);
+    window.addEventListener('logistrack_auth_cambiado', cargarDatos);
     return () => {
       window.removeEventListener('logistrack_rol_cambiado', cargarDatos);
-      window.removeEventListener('storage', cargarDatos);
+      window.removeEventListener('logistrack_auth_cambiado', cargarDatos);
     };
   }, []);
 
   const esAdmin = rolActual === 'Administrador';
 
-  const handleReponerStock = (e) => {
+  const handleReponerStock = async (e) => {
     e.preventDefault();
     if (!productoSeleccionado || !esAdmin) return;
 
-    const sku = productoSeleccionado.sku || productoSeleccionado.codigo;
-    const nuevoStock = Number(productoSeleccionado.stock) + Number(cantidadReponer);
-
-    actualizarProducto(sku, { stock: nuevoStock });
-    setMensajeExito(`Se agregaron +${cantidadReponer} unidades a "${productoSeleccionado.nombre}". Stock actualizado a ${nuevoStock}.`);
-    setProductoSeleccionado(null);
-    setCantidadReponer(10);
-    cargarDatos();
-
-    setTimeout(() => setMensajeExito(''), 4500);
+    setErrorAccion('');
+    try {
+      await reponerStock(productoSeleccionado.id, Number(cantidadReponer));
+      const nuevoStock = Number(productoSeleccionado.stock) + Number(cantidadReponer);
+      setMensajeExito(`Se agregaron +${cantidadReponer} unidades a "${productoSeleccionado.nombre}". Stock actualizado a ${nuevoStock}.`);
+      setProductoSeleccionado(null);
+      setCantidadReponer(10);
+      await cargarDatos();
+      setTimeout(() => setMensajeExito(''), 4500);
+    } catch (err) {
+      setErrorAccion(err.message || 'No se pudo registrar el movimiento de reposición.');
+    }
   };
 
   return (
     <div>
+      {errorAccion && (
+        <div className="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          {errorAccion}
+          <button type="button" className="btn-close" onClick={() => setErrorAccion('')}></button>
+        </div>
+      )}
+      {cargando && (
+        <div className="text-muted small mb-2">
+          <span className="spinner-border spinner-border-sm me-2"></span>
+          Consultando alertas de stock en inventory-service...
+        </div>
+      )}
       {/* Breadcrumb */}
       <nav aria-label="breadcrumb" className="mb-3">
         <ol className="breadcrumb small">

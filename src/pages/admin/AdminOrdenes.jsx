@@ -3,47 +3,53 @@ import { Link } from 'react-router-dom';
 import {
   obtenerOrdenes,
   actualizarEstadoOrden,
-  eliminarOrden,
-  ESTADOS_ORDEN
-} from '../../data/ordenes';
-import { obtenerRolActivo } from '../../data/usuarios';
+  cancelarOrden,
+  ESTADOS_ORDEN_BACKEND
+} from '../../services/adminOrdenService';
+import { obtenerRolActual } from '../../services/authService';
 
 function AdminOrdenes() {
   const [ordenes, setOrdenes] = useState([]);
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
-  const [rolActual, setRolActual] = useState(obtenerRolActivo());
+  const [rolActual, setRolActual] = useState(obtenerRolActual());
   const [ordenAEliminar, setOrdenAEliminar] = useState(null);
   const [alertaExito, setAlertaExito] = useState('');
+  const [errorAccion, setErrorAccion] = useState('');
 
-  const cargarDatos = () => {
-    setOrdenes(obtenerOrdenes());
-    setRolActual(obtenerRolActivo());
+  const cargarDatos = async () => {
+    setErrorAccion('');
+    try {
+      const ords = await obtenerOrdenes();
+      setOrdenes(ords);
+      setRolActual(obtenerRolActual());
+    } catch (err) {
+      setErrorAccion(err.message || 'Error al cargar órdenes desde order-service.');
+    }
   };
 
   useEffect(() => {
     cargarDatos();
     window.addEventListener('logistrack_rol_cambiado', cargarDatos);
-    window.addEventListener('storage', cargarDatos);
+    window.addEventListener('logistrack_auth_cambiado', cargarDatos);
     return () => {
       window.removeEventListener('logistrack_rol_cambiado', cargarDatos);
-      window.removeEventListener('storage', cargarDatos);
+      window.removeEventListener('logistrack_auth_cambiado', cargarDatos);
     };
   }, []);
 
   const esAdmin = rolActual === 'Administrador';
 
-  // Métricas rápidas
   const totalFacturado = ordenes.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
   const ordenesEntregadas = ordenes.filter((o) => o.estado === 'Entregado').length;
-  const ordenesPendientes = ordenes.filter((o) => o.estado === 'Pendiente' || o.estado === 'En despacho').length;
+  const ordenesPendientes = ordenes.filter((o) => o.estado === 'Pendiente' || o.estado === 'Confirmado').length;
 
-  // Filtrado en vivo
   const ordenesFiltradas = ordenes.filter((o) => {
     const texto = filtroTexto.toLowerCase().trim();
     const coincideTexto =
       !texto ||
       o.id.toLowerCase().includes(texto) ||
+      o.codigo.toLowerCase().includes(texto) ||
       (o.cliente && o.cliente.toLowerCase().includes(texto)) ||
       (o.correo && o.correo.toLowerCase().includes(texto));
 
@@ -52,24 +58,40 @@ function AdminOrdenes() {
     return coincideTexto && coincideEstado;
   });
 
-  const handleCambioEstado = (id, nuevoEstado) => {
-    actualizarEstadoOrden(id, nuevoEstado);
-    setAlertaExito(`Estado de la orden ${id} actualizado a "${nuevoEstado}".`);
-    cargarDatos();
-    setTimeout(() => setAlertaExito(''), 3500);
+  const handleCambioEstado = async (id, nuevoEstadoBackend) => {
+    try {
+      await actualizarEstadoOrden(id, nuevoEstadoBackend);
+      setAlertaExito(`Estado de la orden #${id} actualizado a "${nuevoEstadoBackend}".`);
+      await cargarDatos();
+      setTimeout(() => setAlertaExito(''), 3500);
+    } catch (err) {
+      setErrorAccion(err.message || 'No se pudo actualizar el estado de la orden.');
+    }
   };
 
-  const handleConfirmarEliminar = () => {
+  const handleConfirmarEliminar = async () => {
     if (!ordenAEliminar || !esAdmin) return;
-    eliminarOrden(ordenAEliminar.id);
-    setAlertaExito(`Orden ${ordenAEliminar.id} eliminada.`);
-    setOrdenAEliminar(null);
-    cargarDatos();
-    setTimeout(() => setAlertaExito(''), 3500);
+    try {
+      await cancelarOrden(ordenAEliminar.id);
+      setAlertaExito(`Orden #${ordenAEliminar.id} cancelada.`);
+      setOrdenAEliminar(null);
+      await cargarDatos();
+      setTimeout(() => setAlertaExito(''), 3500);
+    } catch (err) {
+      setErrorAccion(err.message || 'No se pudo cancelar la orden.');
+      setOrdenAEliminar(null);
+    }
   };
 
   return (
     <div>
+      {errorAccion && (
+        <div className="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          {errorAccion}
+          <button type="button" className="btn-close" onClick={() => setErrorAccion('')}></button>
+        </div>
+      )}
       {/* Breadcrumb */}
       <nav aria-label="breadcrumb" className="mb-3">
         <ol className="breadcrumb small">
@@ -192,12 +214,12 @@ function AdminOrdenes() {
                     let badgeClass = 'bg-secondary';
                     if (ord.estado === 'Entregado') badgeClass = 'bg-success';
                     if (ord.estado === 'Pendiente') badgeClass = 'bg-warning text-dark';
-                    if (ord.estado === 'En despacho') badgeClass = 'bg-info text-dark';
-                    if (ord.estado === 'Cancelada') badgeClass = 'bg-danger';
+                    if (ord.estado === 'Confirmado') badgeClass = 'bg-info text-dark';
+                    if (ord.estado === 'Cancelado') badgeClass = 'bg-danger';
 
                     return (
                       <tr key={ord.id}>
-                        <td className="ps-3 font-monospace fw-semibold text-secondary">{ord.id}</td>
+                        <td className="ps-3 font-monospace fw-semibold text-secondary">{ord.codigo}</td>
                         <td>
                           <div className="fw-semibold text-dark">{ord.cliente}</div>
                           <small className="text-muted">{ord.correo || 'Sin correo asociado'}</small>
@@ -210,12 +232,13 @@ function AdminOrdenes() {
                           <select
                             className={`form-select form-select-sm border ${badgeClass} text-white fw-semibold`}
                             style={{ cursor: 'pointer', textAlignLast: 'center' }}
-                            value={ord.estado}
+                            value={ord.estadoBackend}
+                            disabled={!esAdmin}
                             onChange={(e) => handleCambioEstado(ord.id, e.target.value)}
                           >
-                            {ESTADOS_ORDEN.map((est) => (
-                              <option key={est} value={est} className="bg-white text-dark">
-                                {est}
+                            {ESTADOS_ORDEN_BACKEND.map((est) => (
+                              <option key={est.value} value={est.value} className="bg-white text-dark">
+                                {est.label}
                               </option>
                             ))}
                           </select>

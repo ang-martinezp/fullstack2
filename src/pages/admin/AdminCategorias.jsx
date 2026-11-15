@@ -5,9 +5,9 @@ import {
   crearCategoria,
   actualizarCategoria,
   eliminarCategoria
-} from '../../data/categorias';
-import { obtenerProductos } from '../../data/productos';
-import { obtenerRolActivo } from '../../data/usuarios';
+} from '../../services/adminCategoriaService';
+import { obtenerProductos } from '../../services/adminProductoService';
+import { obtenerRolActual } from '../../services/authService';
 
 const ICONOS_DISPONIBLES = [
   { valor: 'bi-tag', label: 'Etiqueta (Genérico)' },
@@ -24,7 +24,7 @@ function AdminCategorias() {
   const [categorias, setCategorias] = useState([]);
   const [productos, setProductos] = useState([]);
   const [filtroTexto, setFiltroTexto] = useState('');
-  const [rolActual, setRolActual] = useState(obtenerRolActivo());
+  const [rolActual, setRolActual] = useState(obtenerRolActual());
 
   // Estado del Modal (Crear / Editar)
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -35,20 +35,30 @@ function AdminCategorias() {
   // Estado de eliminación
   const [categoriaAEliminar, setCategoriaAEliminar] = useState(null);
   const [alertaExito, setAlertaExito] = useState('');
+  const [errorAccion, setErrorAccion] = useState('');
 
-  const cargarDatos = () => {
-    setCategorias(obtenerCategorias());
-    setProductos(obtenerProductos());
-    setRolActual(obtenerRolActivo());
+  const cargarDatos = async () => {
+    setErrorAccion('');
+    try {
+      const [cats, prods] = await Promise.all([
+        obtenerCategorias(),
+        obtenerProductos()
+      ]);
+      setCategorias(cats);
+      setProductos(prods);
+      setRolActual(obtenerRolActual());
+    } catch (err) {
+      setErrorAccion(err.message || 'Error al cargar categorías.');
+    }
   };
 
   useEffect(() => {
     cargarDatos();
     window.addEventListener('logistrack_rol_cambiado', cargarDatos);
-    window.addEventListener('storage', cargarDatos);
+    window.addEventListener('logistrack_auth_cambiado', cargarDatos);
     return () => {
       window.removeEventListener('logistrack_rol_cambiado', cargarDatos);
-      window.removeEventListener('storage', cargarDatos);
+      window.removeEventListener('logistrack_auth_cambiado', cargarDatos);
     };
   }, []);
 
@@ -92,7 +102,7 @@ function AdminCategorias() {
     setModalAbierto(true);
   };
 
-  const handleGuardarCategoria = (e) => {
+  const handleGuardarCategoria = async (e) => {
     e.preventDefault();
     if (!esAdmin) return;
 
@@ -103,29 +113,34 @@ function AdminCategorias() {
 
     try {
       if (categoriaEditando) {
-        actualizarCategoria(categoriaEditando.slug, formData);
+        await actualizarCategoria(categoriaEditando.id, formData);
         setAlertaExito(`Categoría "${formData.label}" actualizada con éxito.`);
       } else {
-        crearCategoria(formData);
+        await crearCategoria(formData);
         setAlertaExito(`Categoría "${formData.label}" creada con éxito.`);
       }
 
       setModalAbierto(false);
-      cargarDatos();
+      await cargarDatos();
       setTimeout(() => setAlertaExito(''), 4000);
     } catch (err) {
       setErrorForm(err.message || 'Error al guardar la categoría.');
     }
   };
 
-  const handleConfirmarEliminar = () => {
+  const handleConfirmarEliminar = async () => {
     if (!categoriaAEliminar || !esAdmin) return;
 
-    eliminarCategoria(categoriaAEliminar.slug);
-    setAlertaExito(`Categoría "${categoriaAEliminar.label}" eliminada correctamente.`);
-    setCategoriaAEliminar(null);
-    cargarDatos();
-    setTimeout(() => setAlertaExito(''), 4000);
+    try {
+      await eliminarCategoria(categoriaAEliminar.id);
+      setAlertaExito(`Categoría "${categoriaAEliminar.label}" eliminada correctamente.`);
+      setCategoriaAEliminar(null);
+      await cargarDatos();
+      setTimeout(() => setAlertaExito(''), 4000);
+    } catch (err) {
+      setErrorAccion(err.message || 'No se pudo eliminar la categoría.');
+      setCategoriaAEliminar(null);
+    }
   };
 
   return (
@@ -137,6 +152,14 @@ function AdminCategorias() {
           <li className="breadcrumb-item active" aria-current="page">Categorías</li>
         </ol>
       </nav>
+
+      {errorAccion && (
+        <div className="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          {errorAccion}
+          <button type="button" className="btn-close" onClick={() => setErrorAccion('')}></button>
+        </div>
+      )}
 
       {/* Alerta de notificación */}
       {alertaExito && (

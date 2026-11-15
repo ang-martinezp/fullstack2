@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  obtenerUsuarioActivo,
-  obtenerRolActivo,
-  actualizarUsuario,
-  formatearRunVisual,
-  establecerRolActivo,
-  ROLES_DISPONIBLES
-} from '../../data/usuarios';
+  obtenerUsuarioAutenticado,
+  obtenerRolActual,
+  logout
+} from '../../services/authService';
+import {
+  obtenerUsuarioPorUsername,
+  actualizarUsuario
+} from '../../services/adminUsuarioService';
 
 function AdminPerfil() {
-  const [usuario, setUsuario] = useState(obtenerUsuarioActivo());
-  const [rolActual, setRolActual] = useState(obtenerRolActivo());
+  const [usuario, setUsuario] = useState(null);
+  const [rolActual, setRolActual] = useState(obtenerRolActual());
 
-  // Formulario de datos personales
   const [formData, setFormData] = useState({
     nombre: '',
     apellidos: '',
     correo: '',
-    telefono: ''
+    username: '',
+    rol: ''
   });
 
-  // Formulario de contraseña
   const [passwordData, setPasswordData] = useState({
     actual: '',
     nueva: '',
@@ -29,19 +29,39 @@ function AdminPerfil() {
   });
 
   const [alertaPerfil, setAlertaPerfil] = useState('');
+  const [errorPerfil, setErrorPerfil] = useState('');
   const [alertaPassword, setAlertaPassword] = useState('');
   const [errorPassword, setErrorPassword] = useState('');
 
-  const cargarDatos = () => {
-    const u = obtenerUsuarioActivo();
-    setUsuario(u);
-    setRolActual(obtenerRolActivo());
-    if (u) {
+  const cargarDatos = async () => {
+    const authUser = obtenerUsuarioAutenticado();
+    setRolActual(obtenerRolActual());
+    if (!authUser?.username) return;
+
+    try {
+      const perfil = await obtenerUsuarioPorUsername(authUser.username);
+      setUsuario(perfil);
       setFormData({
-        nombre: u.nombre || '',
-        apellidos: u.apellidos || '',
-        correo: u.correo || '',
-        telefono: u.telefono || ''
+        nombre: perfil.nombre || '',
+        apellidos: perfil.apellidos || '',
+        correo: perfil.correo || '',
+        username: perfil.username || authUser.username,
+        rol: perfil.rol || obtenerRolActual()
+      });
+    } catch {
+      setUsuario({
+        username: authUser.username,
+        nombre: authUser.username,
+        apellidos: '',
+        correo: authUser.email || '',
+        rol: obtenerRolActual()
+      });
+      setFormData({
+        nombre: authUser.username || '',
+        apellidos: '',
+        correo: authUser.email || '',
+        username: authUser.username || '',
+        rol: obtenerRolActual()
       });
     }
   };
@@ -49,21 +69,29 @@ function AdminPerfil() {
   useEffect(() => {
     cargarDatos();
     window.addEventListener('logistrack_rol_cambiado', cargarDatos);
-    window.addEventListener('storage', cargarDatos);
+    window.addEventListener('logistrack_auth_cambiado', cargarDatos);
     return () => {
       window.removeEventListener('logistrack_rol_cambiado', cargarDatos);
-      window.removeEventListener('storage', cargarDatos);
+      window.removeEventListener('logistrack_auth_cambiado', cargarDatos);
     };
   }, []);
 
-  const handleActualizarPerfil = (e) => {
+  const handleActualizarPerfil = async (e) => {
     e.preventDefault();
-    if (!usuario) return;
+    if (!usuario?.id) {
+      setErrorPerfil('No hay un perfil editable vinculado en user-service para esta cuenta.');
+      return;
+    }
 
-    actualizarUsuario(usuario.run, formData);
-    setAlertaPerfil('Datos de la cuenta actualizados correctamente.');
-    cargarDatos();
-    setTimeout(() => setAlertaPerfil(''), 3500);
+    try {
+      setErrorPerfil('');
+      await actualizarUsuario(usuario.id, formData);
+      setAlertaPerfil('Datos de la cuenta actualizados en user-service.');
+      await cargarDatos();
+      setTimeout(() => setAlertaPerfil(''), 3500);
+    } catch (err) {
+      setErrorPerfil(err.message || 'No se pudo actualizar el perfil.');
+    }
   };
 
   const handleCambiarPassword = (e) => {
@@ -86,12 +114,6 @@ function AdminPerfil() {
     setAlertaPassword('¡Contraseña actualizada con éxito!');
     setPasswordData({ actual: '', nueva: '', confirmacion: '' });
     setTimeout(() => setAlertaPassword(''), 3500);
-  };
-
-  const handleCambiarRol = (e) => {
-    const nuevo = e.target.value;
-    establecerRolActivo(nuevo);
-    setRolActual(nuevo);
   };
 
   const esAdmin = rolActual === 'Administrador';
@@ -117,7 +139,7 @@ function AdminPerfil() {
               <div>
                 <h4 className="fw-bold text-dark m-0">{usuario?.nombre} {usuario?.apellidos}</h4>
                 <div className="text-secondary small font-monospace mt-1">
-                  RUN: {formatearRunVisual(usuario?.run)}
+                  Usuario JWT: @{usuario?.username}
                 </div>
                 <div className="d-flex align-items-center gap-2 mt-1">
                   <span className={`badge ${esAdmin ? 'bg-primary' : 'bg-info text-dark'} px-3 py-1`}>
@@ -130,19 +152,14 @@ function AdminPerfil() {
               </div>
             </div>
 
-            {/* Simulador rápido de rol en perfil */}
-            <div className="p-3 bg-light rounded border text-md-end">
-              <small className="text-muted d-block fw-semibold mb-1">Simular sesión como:</small>
-              <select
-                className="form-select form-select-sm fw-semibold"
-                style={{ width: '160px' }}
-                value={rolActual}
-                onChange={handleCambiarRol}
+            <div className="text-md-end">
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm"
+                onClick={logout}
               >
-                {ROLES_DISPONIBLES.map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
-              </select>
+                <i className="bi bi-box-arrow-right me-1"></i> Cerrar sesión JWT
+              </button>
             </div>
           </div>
         </div>
@@ -159,6 +176,12 @@ function AdminPerfil() {
             </div>
 
             <div className="card-body p-4">
+              {errorPerfil && (
+                <div className="alert alert-danger py-2 px-3 small d-flex align-items-center gap-2 mb-3">
+                  <i className="bi bi-exclamation-triangle-fill"></i>
+                  {errorPerfil}
+                </div>
+              )}
               {alertaPerfil && (
                 <div className="alert alert-success py-2 px-3 small d-flex align-items-center gap-2 mb-3">
                   <i className="bi bi-check-circle-fill"></i>

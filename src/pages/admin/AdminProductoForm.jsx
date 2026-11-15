@@ -2,28 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   obtenerProductoPorSku,
+  obtenerUnidadesMedida,
   crearProducto,
   actualizarProducto
-} from '../../data/productos';
-import { obtenerCategorias } from '../../data/categorias';
-import { obtenerRolActivo } from '../../data/usuarios';
+} from '../../services/adminProductoService';
+import { obtenerCategorias } from '../../services/adminCategoriaService';
+import { obtenerRolActual } from '../../services/authService';
 
 function AdminProductoForm() {
   const { sku } = useParams();
   const navigate = useNavigate();
   const esEdicion = Boolean(sku);
 
-  const [rolActual] = useState(obtenerRolActivo());
+  const [rolActual] = useState(obtenerRolActual());
   const esAdmin = rolActual === 'Administrador';
 
   const [categorias, setCategorias] = useState([]);
+  const [unidades, setUnidades] = useState([]);
+  const [productoId, setProductoId] = useState(null);
+  const [stockId, setStockId] = useState(null);
   const [formData, setFormData] = useState({
     sku: '',
     nombre: '',
     categoria: '',
     categoriaLabel: '',
+    unidadMedidaId: '',
+    pesoKg: '1',
     precio: '',
-    stock: '',
+    stock: '0',
     stockCritico: '5',
     descripcion: '',
     descripcionLarga: '',
@@ -37,38 +43,51 @@ function AdminProductoForm() {
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
-    const cats = obtenerCategorias();
-    setCategorias(cats);
+    const cargarInicial = async () => {
+      try {
+        const [cats, unids] = await Promise.all([
+          obtenerCategorias(),
+          obtenerUnidadesMedida()
+        ]);
+        setCategorias(cats);
+        setUnidades(unids);
 
-    if (esEdicion) {
-      const prod = obtenerProductoPorSku(sku);
-      if (prod) {
-        setFormData({
-          sku: prod.sku || prod.codigo || '',
-          nombre: prod.nombre || '',
-          categoria: prod.categoria || (cats[0]?.slug || ''),
-          categoriaLabel: prod.categoriaLabel || '',
-          precio: String(prod.precio || ''),
-          stock: String(prod.stock !== undefined ? prod.stock : ''),
-          stockCritico: String(prod.stockCritico !== undefined ? prod.stockCritico : '5'),
-          descripcion: prod.descripcion || '',
-          descripcionLarga: prod.descripcionLarga || '',
-          icono: prod.icono || 'bi-box-seam',
-          oferta: Boolean(prod.oferta),
-          descuento: prod.descuento ? String(prod.descuento) : ''
-        });
-      } else {
-        setErrorGlobal(`No se encontró ningún producto con el SKU "${sku}".`);
+        if (esEdicion) {
+          const prod = await obtenerProductoPorSku(sku);
+          setProductoId(prod.id);
+          setStockId(prod.stockId || null);
+          const unidMatch = unids.find(
+            (u) => u.nombre?.toLowerCase() === prod.unidadMedidaNombre?.toLowerCase()
+          );
+          setFormData({
+            sku: prod.sku || prod.codigo || '',
+            nombre: prod.nombre || '',
+            categoria: prod.categoria || (cats[0]?.slug || ''),
+            categoriaLabel: prod.categoriaLabel || '',
+            unidadMedidaId: String(unidMatch?.id || unids[0]?.id || ''),
+            pesoKg: String(prod.pesoKg ?? 1),
+            precio: String(prod.precio ?? ''),
+            stock: String(prod.stock !== undefined ? prod.stock : '0'),
+            stockCritico: String(prod.stockCritico !== undefined ? prod.stockCritico : '5'),
+            descripcion: prod.descripcion || '',
+            descripcionLarga: prod.descripcion || '',
+            icono: prod.icono || 'bi-box-seam',
+            oferta: false,
+            descuento: ''
+          });
+        } else {
+          setFormData((prev) => ({
+            ...prev,
+            categoria: cats[0]?.slug || '',
+            categoriaLabel: cats[0]?.label || '',
+            unidadMedidaId: String(unids[0]?.id || '')
+          }));
+        }
+      } catch (err) {
+        setErrorGlobal(err.message || `No se pudo cargar el formulario para SKU "${sku || ''}".`);
       }
-    } else {
-      if (cats.length > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          categoria: cats[0].slug,
-          categoriaLabel: cats[0].label
-        }));
-      }
-    }
+    };
+    cargarInicial();
   }, [sku, esEdicion]);
 
   const handleChange = (e) => {
@@ -140,7 +159,7 @@ function AdminProductoForm() {
     return Object.keys(nuevosErrores).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!esAdmin) {
       setErrorGlobal('Modo Vendedor: No tienes permisos para crear o modificar productos.');
@@ -152,30 +171,33 @@ function AdminProductoForm() {
       return;
     }
 
+    const catSeleccionada = categorias.find((c) => c.slug === formData.categoria);
+    if (!catSeleccionada?.id) {
+      setErrorGlobal('Debes seleccionar una categoría válida del catálogo.');
+      return;
+    }
+
     try {
       setGuardando(true);
       setErrorGlobal('');
 
       const productoPayload = {
         sku: formData.sku.trim().toUpperCase(),
-        codigo: formData.sku.trim().toUpperCase(),
         nombre: formData.nombre.trim(),
-        categoria: formData.categoria,
-        categoriaLabel: formData.categoriaLabel || formData.categoria,
+        categoriaId: catSeleccionada.id,
+        unidadMedidaId: Number(formData.unidadMedidaId || unidades[0]?.id || 1),
+        pesoKg: Number(formData.pesoKg || 1),
         precio: Number(formData.precio),
         stock: parseInt(formData.stock, 10),
         stockCritico: parseInt(formData.stockCritico, 10),
-        descripcion: formData.descripcion.trim(),
-        descripcionLarga: formData.descripcionLarga.trim() || formData.descripcion.trim(),
-        icono: formData.icono || 'bi-box-seam',
-        oferta: formData.oferta,
-        descuento: formData.oferta ? Number(formData.descuento) : 0
+        stockId,
+        descripcion: formData.descripcion.trim()
       };
 
       if (esEdicion) {
-        actualizarProducto(sku, productoPayload);
+        await actualizarProducto(productoId, productoPayload);
       } else {
-        crearProducto(productoPayload);
+        await crearProducto(productoPayload);
       }
 
       navigate('/admin/productos', { replace: true });

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { obtenerProductos } from '../../data/productos';
-import { obtenerOrdenes } from '../../data/ordenes';
-import { obtenerCategorias } from '../../data/categorias';
-import { obtenerUsuarios } from '../../data/usuarios';
+import { obtenerProductos } from '../../services/adminProductoService';
+import { obtenerOrdenes } from '../../services/adminOrdenService';
+import { obtenerCategorias } from '../../services/adminCategoriaService';
+import { obtenerUsuarios } from '../../services/adminUsuarioService';
+import { obtenerRolActual } from '../../services/authService';
 
 function AdminReportes() {
   const [productos, setProductos] = useState([]);
@@ -13,10 +14,24 @@ function AdminReportes() {
   const [filtroPeriodo, setFiltroPeriodo] = useState('todos');
 
   useEffect(() => {
-    setProductos(obtenerProductos());
-    setOrdenes(obtenerOrdenes());
-    setCategorias(obtenerCategorias());
-    setUsuarios(obtenerUsuarios());
+    const cargar = async () => {
+      const esAdmin = obtenerRolActual() === 'Administrador';
+      try {
+        const [prods, ords, cats, usrs] = await Promise.all([
+          obtenerProductos().catch(() => []),
+          obtenerOrdenes().catch(() => []),
+          obtenerCategorias().catch(() => []),
+          esAdmin ? obtenerUsuarios().catch(() => []) : Promise.resolve([])
+        ]);
+        setProductos(prods);
+        setOrdenes(ords);
+        setCategorias(cats);
+        setUsuarios(usrs);
+      } catch {
+        // Ignorar errores parciales en carga de reporte
+      }
+    };
+    cargar();
   }, []);
 
   // 1. Cálculos de Negocio
@@ -55,7 +70,7 @@ function AdminReportes() {
   });
 
   // 3. Reporte por Estado de Orden
-  const estadosOrdenes = ['Entregado', 'Pendiente', 'En despacho', 'Cancelada'];
+  const estadosOrdenes = ['Entregado', 'Pendiente', 'Confirmado', 'Cancelado'];
   const reporteEstados = estadosOrdenes.map((est) => {
     const ords = ordenes.filter((o) => o.estado === est);
     const monto = ords.reduce((acc, o) => acc + (Number(o.total) || 0), 0);

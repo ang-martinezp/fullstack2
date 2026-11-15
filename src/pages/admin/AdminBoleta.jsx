@@ -3,22 +3,30 @@ import { useParams, Link } from 'react-router-dom';
 import {
   obtenerOrdenPorId,
   actualizarEstadoOrden,
-  ESTADOS_ORDEN
-} from '../../data/ordenes';
-import { formatearRunVisual } from '../../data/usuarios';
+  ESTADOS_ORDEN_BACKEND
+} from '../../services/adminOrdenService';
+import { obtenerRolActual } from '../../services/authService';
 
 function AdminBoleta() {
   const { id } = useParams();
   const [orden, setOrden] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [alerta, setAlerta] = useState('');
+  const esAdmin = obtenerRolActual() === 'Administrador';
 
-  const cargarOrden = () => {
-    if (id) {
-      const ord = obtenerOrdenPorId(id);
-      setOrden(ord);
+  const cargarOrden = async () => {
+    if (!id) {
+      setCargando(false);
+      return;
     }
-    setCargando(false);
+    try {
+      const ord = await obtenerOrdenPorId(id);
+      setOrden(ord);
+    } catch {
+      setOrden(null);
+    } finally {
+      setCargando(false);
+    }
   };
 
   useEffect(() => {
@@ -46,11 +54,15 @@ function AdminBoleta() {
   const neto = orden.neto || Math.round(Number(orden.total) / 1.19);
   const iva = orden.iva || (Number(orden.total) - neto);
 
-  const handleCambioEstado = (nuevoEstado) => {
-    actualizarEstadoOrden(orden.id, nuevoEstado);
-    setAlerta(`Estado actualizado a "${nuevoEstado}".`);
-    cargarOrden();
-    setTimeout(() => setAlerta(''), 3000);
+  const handleCambioEstado = async (nuevoEstadoBackend) => {
+    try {
+      await actualizarEstadoOrden(orden.id, nuevoEstadoBackend);
+      setAlerta(`Estado actualizado a "${nuevoEstadoBackend}".`);
+      await cargarOrden();
+      setTimeout(() => setAlerta(''), 3000);
+    } catch (err) {
+      setAlerta(err.message || 'No se pudo actualizar el estado.');
+    }
   };
 
   const handleImprimir = () => {
@@ -65,7 +77,7 @@ function AdminBoleta() {
           <ol className="breadcrumb small mb-2">
             <li className="breadcrumb-item"><Link to="/admin">Dashboard</Link></li>
             <li className="breadcrumb-item"><Link to="/admin/ordenes">Órdenes</Link></li>
-            <li className="breadcrumb-item active" aria-current="page">Boleta {orden.id}</li>
+            <li className="breadcrumb-item active" aria-current="page">Boleta {orden.codigo}</li>
           </ol>
         </nav>
 
@@ -86,12 +98,13 @@ function AdminBoleta() {
               <select
                 className="form-select form-select-sm"
                 style={{ width: '160px' }}
-                value={orden.estado}
+                value={orden.estadoBackend}
+                disabled={!esAdmin}
                 onChange={(e) => handleCambioEstado(e.target.value)}
               >
-                {ESTADOS_ORDEN.map((est) => (
-                  <option key={est} value={est}>
-                    {est}
+                {ESTADOS_ORDEN_BACKEND.map((est) => (
+                  <option key={est.value} value={est.value}>
+                    {est.label}
                   </option>
                 ))}
               </select>
@@ -149,7 +162,7 @@ function AdminBoleta() {
             <div className="col-12 col-md-6">
               <strong>R.U.T.:</strong>{' '}
               <span className="font-monospace text-dark">
-                {orden.clienteRun ? formatearRunVisual(orden.clienteRun) : '66.666.666-6'}
+                {orden.clienteRut || '66.666.666-6'}
               </span>
             </div>
             <div className="col-12 col-md-6">
