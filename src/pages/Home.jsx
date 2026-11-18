@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { obtenerProductos } from '../data/productos';
 import ProductoCard from '../components/ProductoCard';
@@ -8,14 +8,27 @@ const SKUS_DESTACADOS = ['SKU-001', 'SKU-002', 'SKU-005'];
 function Home() {
     const location = useLocation();
     const alertaAcceso = location.state?.alertaAcceso;
+    const [productosDestacados, setProductosDestacados] = useState([]);
+    const [cargando, setCargando] = useState(true);
 
     useEffect(() => {
         document.title = 'LogisTrack Store - Tienda Online';
-    }, []);
+        let montado = true;
 
-    const productosDestacados = obtenerProductos().filter(p =>
-        SKUS_DESTACADOS.includes(p.sku)
-    );
+        obtenerProductos()
+            .then((todos) => {
+                if (!montado) return;
+                const destacados = todos.filter((p) => SKUS_DESTACADOS.includes(p.sku));
+                // Si los SKUs no coinciden exactamente con la BD, toma los primeros 3 productos reales
+                setProductosDestacados(destacados.length > 0 ? destacados : todos.slice(0, 3));
+            })
+            .catch((err) => console.error('Error cargando destacados:', err))
+            .finally(() => {
+                if (montado) setCargando(false);
+            });
+
+        return () => { montado = false; };
+    }, []);
 
     return (
         <>
@@ -64,21 +77,28 @@ function Home() {
             <section className="mb-5">
                 <div className="text-center mb-4">
                     <h2 className="fw-bold text-navy">Productos Destacados</h2>
-                    <p className="text-muted">Una muestra de nuestro catálogo. Iremos sumando más productos.</p>
+                    <p className="text-muted">Disponibilidad en tiempo real sincronizada con el API Gateway.</p>
                 </div>
 
-                <div className="row g-4">
-                    {productosDestacados.map(producto => (
-                        <ProductoCard producto={producto} key={producto.sku} />
-                    ))}
-                </div>
+                {cargando ? (
+                    <div className="text-center py-5">
+                        <div className="spinner-border text-primary" role="status"></div>
+                        <p className="mt-2 text-muted">Cargando productos...</p>
+                    </div>
+                ) : (
+                    <div className="row g-4">
+                        {productosDestacados.map((producto) => (
+                            <ProductoCard producto={producto} key={producto.sku} />
+                        ))}
+                    </div>
+                )}
             </section>
 
-            {/* SECCIÓN 3: VIDEO YOUTUBE */}
+            {/* SECCIÓN 3: VIDEO PUBLICITARIO */}
             <section className="card shadow-sm p-4 p-md-5 mb-5 rounded-4 border-0">
                 <div className="text-center mb-4">
                     <h2 className="fw-bold text-navy">GEFORCE RTX50 SERIES!</h2>
-                    <p className="text-muted">Conoce la ultima generación de Nvidia con toda la potencia!</p>
+                    <p className="text-muted">Conoce la última generación de Nvidia con toda la potencia!</p>
                 </div>
                 <div className="row justify-content-center">
                     <div className="col-lg-10">
