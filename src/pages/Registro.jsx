@@ -6,6 +6,7 @@ import {
   obtenerUsuarioPorCorreo
 } from '../data/usuarios';
 import { REGIONES_Y_COMUNAS, obtenerComunasPorRegion } from '../data/regiones';
+import { registro as registroApi } from '../services/authService';
 import {
   esCorreoInstitucionalValido,
   esClaveValida,
@@ -163,7 +164,7 @@ function Registro() {
     return `${base} ${errores[campo] ? 'is-invalid' : 'is-valid'}`;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const campos = [
@@ -200,6 +201,29 @@ function Registro() {
 
     try {
       setEnviando(true);
+      setAlerta(null);
+
+      // 1. Intentar registrar en Spring Boot vía API Gateway (/api/auth/registro)
+      const usernameDerivado = valores.correo.includes('@')
+        ? valores.correo.split('@')[0]
+        : valores.correo;
+
+      try {
+        await registroApi({
+          username: usernameDerivado,
+          password: valores.clave,
+          email: valores.correo,
+          rol: 'CLIENTE'
+        });
+      } catch (errApi) {
+        console.warn('Registro en backend REST falló o no disponible, continuando con persistencia local:', errApi.message);
+        // Si el backend da un error específico de duplicidad (409 o similar) y contiene información
+        if (errApi.message && (errApi.message.toLowerCase().includes('ya está registrado') || errApi.message.includes('409'))) {
+          throw errApi;
+        }
+      }
+
+      // 2. Persistir localmente para mantener compatibilidad con Checkout y catálogo
       const creado = crearUsuario({
         run: valores.run,
         nombre: valores.nombre,

@@ -74,6 +74,22 @@ export async function login(username, password) {
   }
 }
 
+export async function registro(payload) {
+  try {
+    const body = {
+      username: String(payload.username || payload.correo || '').trim(),
+      password: String(payload.password || payload.clave || ''),
+      email: String(payload.email || payload.correo || '').trim(),
+      rol: 'CLIENTE'
+    };
+
+    const { data } = await api.post('/api/auth/registro', body);
+    return data;
+  } catch (err) {
+    throw new Error(extraerMensajeError(err));
+  }
+}
+
 export function logout() {
   localStorage.removeItem(CLAVE_TOKEN);
   localStorage.removeItem(CLAVE_AUTH_USER);

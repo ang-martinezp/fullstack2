@@ -128,3 +128,12 @@ export async function obtenerProductosEnOferta() {
   const productos = await obtenerProductos();
   return productos.filter((p) => p.oferta);
 }
+
+export async function actualizarProducto(sku, cambios) {
+  try {
+    const prod = await obtenerProductoPorSku(sku);
+    return prod ? { ...prod, ...cambios } : null;
+  } catch {
+    return null;
+  }
+}
