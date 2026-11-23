@@ -15,9 +15,19 @@ import { formatearCLP } from '../utils/validaciones';
 function Carrito() {
   const navigate = useNavigate();
   const [items, setItems] = useState(() => obtenerCarrito());
-  const [productosCatalogo] = useState(() => obtenerProductos());
+  const [productosCatalogo, setProductosCatalogo] = useState([]);
+  const [cargandoCatalogo, setCargandoCatalogo] = useState(true);
   const [alertaInfo, setAlertaInfo] = useState(true);
 
+  // Cargar catálogo rápido desde la API REST
+  useEffect(() => {
+    obtenerProductos()
+      .then((prods) => setProductosCatalogo(prods))
+      .catch((err) => console.error('Error cargando catálogo rápido:', err))
+      .finally(() => setCargandoCatalogo(false));
+  }, []);
+
+  // Sincronizar ítems del carrito con eventos locales
   useEffect(() => {
     document.title = 'Carrito de Compras - LogisTrack Store';
 
@@ -78,7 +88,7 @@ function Carrito() {
       {alertaInfo && (
         <div className="alert alert-info alert-dismissible fade show shadow-sm mb-4 small" role="alert">
           <i className="bi bi-info-circle-fill me-2"></i>
-          <strong>¡Vista Carrito de Compra Reactiva!</strong> La información del carrito se sincroniza en tiempo real y persiste en <code>localStorage</code>.
+          <strong>¡Vista Carrito Sincronizada!</strong> La información del carrito se mantiene en tiempo real y conectada al stock del inventario.
           <button
             type="button"
             className="btn-close"
@@ -89,72 +99,82 @@ function Carrito() {
       )}
 
       <div className="row g-4 align-items-start">
-        {/* Columna Izquierda: Lista rápida de productos (Figura 5 Anexo 1) */}
+        {/* Columna Izquierda: Lista rápida de productos conectada al API */}
         <div className="col-12 col-lg-5">
           <div className="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white">
-            <h2 className="h5 fw-bold text-navy mb-3">Lista de productos</h2>
-            <div className="row g-3">
-              {productosCatalogo.slice(0, 6).map((prod) => {
-                const precioEfectivo = calcularPrecioEfectivo(prod);
-                return (
-                  <div className="col-6" key={prod.sku}>
-                    <div className="card h-100 border rounded-3 shadow-sm">
-                      <div
-                        className="d-flex align-items-center justify-content-center p-2 position-relative"
-                        style={{ height: '100px', backgroundColor: '#eef2f6' }}
-                      >
-                        {prod.oferta && prod.descuento > 0 && (
-                          <span
-                            className="badge bg-danger position-absolute m-1"
-                            style={{ top: 0, right: 0, fontSize: '0.65rem' }}
-                          >
-                            -{prod.descuento}%
-                          </span>
-                        )}
-                        {prod.imagen ? (
-                          <img
-                            src={prod.imagen}
-                            alt={prod.nombre}
-                            className="img-fluid"
-                            style={{ maxHeight: '84px', objectFit: 'contain' }}
-                          />
-                        ) : (
-                          <i className={`bi ${prod.icono} fs-1 text-navy`}></i>
-                        )}
-                      </div>
-                      <div className="card-body p-2 d-flex flex-column">
-                        <Link
-                          to={`/productos/${prod.sku}`}
-                          className="text-decoration-none text-navy fw-bold small mb-1 text-truncate"
-                          title={prod.nombre}
+            <h2 className="h5 fw-bold text-navy mb-3">Lista rápida de productos</h2>
+
+            {cargandoCatalogo ? (
+              <div className="text-center py-4">
+                <div className="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <p className="small text-muted mt-2">Cargando productos...</p>
+              </div>
+            ) : (
+              <div className="row g-3">
+                {productosCatalogo.slice(0, 6).map((prod) => {
+                  const precioEfectivo = calcularPrecioEfectivo(prod);
+                  return (
+                    <div className="col-6" key={prod.sku}>
+                      <div className="card h-100 border rounded-3 shadow-sm">
+                        <div
+                          className="d-flex align-items-center justify-content-center p-2 position-relative"
+                          style={{ height: '100px', backgroundColor: '#eef2f6' }}
                         >
-                          {prod.nombre}
-                        </Link>
-                        <small className="text-muted" style={{ fontSize: '0.72rem' }}>
-                          Stock: {prod.stock}
-                        </small>
-                        <div className="mt-auto pt-2">
-                          <div className="fw-bold text-danger small mb-2">
-                            {formatearCLP(precioEfectivo)}
-                          </div>
-                          <button
-                            type="button"
-                            className="btn btn-dark btn-sm w-100 py-1"
-                            onClick={() => handleAgregarRapido(prod)}
+                          {prod.oferta && prod.descuento > 0 && (
+                            <span
+                              className="badge bg-danger position-absolute m-1"
+                              style={{ top: 0, right: 0, fontSize: '0.65rem' }}
+                            >
+                              -{prod.descuento}%
+                            </span>
+                          )}
+                          {prod.imagen ? (
+                            <img
+                              src={prod.imagen}
+                              alt={prod.nombre}
+                              className="img-fluid"
+                              style={{ maxHeight: '84px', objectFit: 'contain' }}
+                            />
+                          ) : (
+                            <i className={`bi ${prod.icono} fs-1 text-navy`}></i>
+                          )}
+                        </div>
+                        <div className="card-body p-2 d-flex flex-column">
+                          <Link
+                            to={`/productos/${prod.sku}`}
+                            className="text-decoration-none text-navy fw-bold small mb-1 text-truncate"
+                            title={prod.nombre}
                           >
-                            <i className="bi bi-cart-plus me-1"></i>Añadir
-                          </button>
+                            {prod.nombre}
+                          </Link>
+                          <small className="text-muted" style={{ fontSize: '0.72rem' }}>
+                            Stock: {prod.stock}
+                          </small>
+                          <div className="mt-auto pt-2">
+                            <div className="fw-bold text-danger small mb-2">
+                              {formatearCLP(precioEfectivo)}
+                            </div>
+                            <button
+                              type="button"
+                              className="btn btn-dark btn-sm w-100 py-1"
+                              onClick={() => handleAgregarRapido(prod)}
+                              disabled={prod.stock <= 0}
+                            >
+                              <i className="bi bi-cart-plus me-1"></i>
+                              {prod.stock <= 0 ? 'Agotado' : 'Añadir'}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Columna Derecha: Tabla Carrito de Compras (Figura 5 Anexo 1) */}
+        {/* Columna Derecha: Tabla Carrito de Compras */}
         <div className="col-12 col-lg-7">
           <div className="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white">
             <div className="d-flex justify-content-between align-items-center mb-3">

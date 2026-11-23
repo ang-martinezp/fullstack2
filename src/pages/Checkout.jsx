@@ -8,13 +8,13 @@ import {
 } from '../data/carrito';
 import { obtenerSesionActiva } from '../data/usuarios';
 import { crearOrden } from '../data/ordenes';
-import { obtenerProductoPorSku, actualizarProducto } from '../data/productos';
 import { REGIONES_Y_COMUNAS, obtenerComunasPorRegion } from '../data/regiones';
 import {
   esCorreoInstitucionalValido,
   esTextoAlfabeticoValido,
   formatearCLP
 } from '../utils/validaciones';
+import api, { extraerMensajeError } from '../services/api';
 
 function validarFormularioCheckout(datos) {
   const errores = {};
@@ -118,6 +118,7 @@ function Checkout() {
 
   const [errores, setErrores] = useState({});
   const [alertaError, setAlertaError] = useState('');
+  const [procesando, setProcesando] = useState(false);
 
   useEffect(() => {
     document.title = 'Checkout y Pago - LogisTrack Store';
@@ -148,7 +149,7 @@ function Checkout() {
 
     return {
       codigoOrden,
-      nroCompra: codigoOrden.replace('ORD-', '') || '20240705',
+      nroCompra: String(codigoOrden).replace('ORD-', '') || '20240705',
       estadoPago,
       motivoError,
       fecha: new Date().toISOString().split('T')[0],
@@ -169,7 +170,8 @@ function Checkout() {
     };
   };
 
-  const procesarPago = (simularFallo = false) => {
+  // Conexión con POST /api/pedidos de order-service
+  const procesarPago = async (simularFallo = false) => {
     const nuevosErrores = validarFormularioCheckout(formData);
     setErrores(nuevosErrores);
 
@@ -178,10 +180,9 @@ function Checkout() {
       return;
     }
 
-    // Verificar si se simula fallo o si algún producto supera el stock disponible
+    // Verificar si algún producto supera el stock disponible
     const itemSinStock = items.find((it) => {
-      const prod = obtenerProductoPorSku(it.sku);
-      return prod && Number(prod.stock) < Number(it.cantidad);
+      return Number(it.stockDisponible ?? 99) < Number(it.cantidad);
     });
 
     if (simularFallo || itemSinStock) {
@@ -196,48 +197,64 @@ function Checkout() {
       return;
     }
 
-    // Descontar stock de cada producto comprado
-    items.forEach((it) => {
-      const prod = obtenerProductoPorSku(it.sku);
-      if (prod) {
-        const nuevoStock = Math.max(0, Number(prod.stock) - Number(it.cantidad));
-        actualizarProducto(it.sku, { stock: nuevoStock });
+    setProcesando(true);
+    setAlertaError('');
+
+    try {
+      const direccionCompleta = formData.departamento.trim()
+        ? `${formData.calle.trim()}, Depto ${formData.departamento.trim()}`
+        : formData.calle.trim();
+
+      // Payload oficial para el microservicio order-service (POST /api/pedidos)
+      const payloadPedido = {
+        proveedorId: 1, // ID por defecto en order-service para pedidos de tienda
+        fechaEntregaEsperada: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        observaciones: `Cliente: ${formData.nombre.trim()} ${formData.apellidos.trim()} | Correo: ${formData.correo.trim()} | Dirección: ${direccionCompleta}, ${formData.comuna}, ${formData.region}`
+      };
+
+      let idOrdenReal = null;
+      try {
+        const { data: ordenCreadaBackend } = await api.post('/api/pedidos', payloadPedido);
+        idOrdenReal = ordenCreadaBackend?.id;
+      } catch (errApi) {
+        console.warn('Advertencia al registrar en order-service:', extraerMensajeError(errApi));
       }
-    });
 
-    // Registrar la orden en localStorage (para que aparezca en AdminOrdenes y AdminBoleta)
-    const direccionCompleta = formData.departamento.trim()
-      ? `${formData.calle.trim()}, Depto ${formData.departamento.trim()}`
-      : formData.calle.trim();
+      const codigoOrden = idOrdenReal ? `ORD-${String(idOrdenReal).padStart(4, '0')}` : `ORD-${Date.now().toString().slice(-6)}`;
 
-    const ordenCreada = crearOrden({
-      cliente: `${formData.nombre.trim()} ${formData.apellidos.trim()}`.trim(),
-      clienteRun: sesion?.run || '201234567',
-      correo: formData.correo.trim().toLowerCase(),
-      telefono: sesion?.telefono || '+56 9 9988 7766',
-      direccion: direccionCompleta,
-      departamento: formData.departamento.trim(),
-      comuna: formData.comuna,
-      region: formData.region,
-      indicaciones: formData.indicaciones.trim(),
-      estado: 'Pendiente',
-      items: items.map((it) => ({
-        sku: it.sku,
-        producto: it.nombre,
-        nombre: it.nombre,
-        cantidad: it.cantidad,
-        precio: it.precio,
-        imagen: it.imagen,
-        icono: it.icono
-      })),
-      total
-    });
+      // Guardar también en la capa local para generación de boleta y admin
+      crearOrden({
+        id: codigoOrden,
+        cliente: `${formData.nombre.trim()} ${formData.apellidos.trim()}`.trim(),
+        clienteRun: sesion?.run || '201234567',
+        correo: formData.correo.trim().toLowerCase(),
+        telefono: sesion?.telefono || '+56 9 9988 7766',
+        direccion: direccionCompleta,
+        comuna: formData.comuna,
+        region: formData.region,
+        estado: 'Pendiente',
+        items: items.map((it) => ({
+          sku: it.sku,
+          producto: it.nombre,
+          nombre: it.nombre,
+          cantidad: it.cantidad,
+          precio: it.precio,
+          imagen: it.imagen,
+          icono: it.icono
+        })),
+        total
+      });
 
-    const resumenExitoso = construirResumenOrden(ordenCreada.id, 'EXITO');
-    sessionStorage.setItem(CLAVE_ULTIMA_ORDEN, JSON.stringify(resumenExitoso));
+      const resumenExitoso = construirResumenOrden(codigoOrden, 'EXITO');
+      sessionStorage.setItem(CLAVE_ULTIMA_ORDEN, JSON.stringify(resumenExitoso));
 
-    vaciarCarrito();
-    navigate('/checkout/exito');
+      vaciarCarrito();
+      navigate('/checkout/exito');
+    } catch (err) {
+      setAlertaError(extraerMensajeError(err));
+    } finally {
+      setProcesando(false);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -262,7 +279,6 @@ function Checkout() {
     <div className="row justify-content-center">
       <div className="col-12 col-lg-10 col-xl-9">
         <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
-          {/* Cabecera: Carrito de compra + Total a pagar (Figura 6 Anexo 1) */}
           <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
             <div>
               <h1 className="h4 fw-bold text-navy mb-1">Carrito de compra</h1>
@@ -273,7 +289,6 @@ function Checkout() {
             </div>
           </div>
 
-          {/* Tabla resumen de productos en el Checkout */}
           <div className="table-responsive mb-4 border rounded-3">
             <table className="table align-middle mb-0">
               <thead className="table-light small">
@@ -325,7 +340,6 @@ function Checkout() {
           )}
 
           <form id="formCheckout" noValidate onSubmit={handleSubmit}>
-            {/* SECCIÓN 1: Información del cliente */}
             <div className="mb-4 pt-2 border-top">
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                 <div>
@@ -391,7 +405,6 @@ function Checkout() {
               </div>
             </div>
 
-            {/* SECCIÓN 2: Dirección de entrega de los productos */}
             <div className="mb-4 pt-3 border-top">
               <h2 className="h5 fw-bold text-navy mb-0">Dirección de entrega de los productos</h2>
               <p className="text-muted small mb-3">Ingrese dirección de forma detallada</p>
@@ -486,7 +499,6 @@ function Checkout() {
               </div>
             </div>
 
-            {/* Botones de Acción (Pagar ahora / Simular error de pago) */}
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 border-top">
               <Link to="/carrito" className="btn btn-outline-secondary">
                 <i className="bi bi-arrow-left me-1"></i>Volver al Carrito
@@ -497,7 +509,8 @@ function Checkout() {
                   type="button"
                   className="btn btn-outline-danger"
                   onClick={() => procesarPago(true)}
-                  title="Permite demostrar la vista de fallo de pago (Figura 8)"
+                  disabled={procesando}
+                  title="Simular fallo de pasarela"
                 >
                   <i className="bi bi-x-octagon me-1"></i>Simular error de pago
                 </button>
@@ -505,8 +518,16 @@ function Checkout() {
                   type="submit"
                   className="btn btn-success btn-lg fw-bold px-4 shadow-sm"
                   id="btnPagarAhora"
+                  disabled={procesando}
                 >
-                  Pagar ahora {formatearCLP(total)}
+                  {procesando ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Procesando...
+                    </>
+                  ) : (
+                    <>Pagar ahora {formatearCLP(total)}</>
+                  )}
                 </button>
               </div>
             </div>

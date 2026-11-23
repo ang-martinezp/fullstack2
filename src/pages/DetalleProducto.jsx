@@ -4,20 +4,43 @@ import { obtenerProductoPorSku } from '../data/productos';
 import { agregarAlCarrito, calcularPrecioEfectivo } from '../data/carrito';
 
 function formatearCLP(numero) {
-  return '$' + numero.toLocaleString('es-CL');
+  return '$' + Number(numero || 0).toLocaleString('es-CL');
 }
 
 function DetalleProducto() {
   const { sku } = useParams();
-  const producto = obtenerProductoPorSku(sku);
+  const [producto, setProducto] = useState(null);
+  const [cargando, setCargando] = useState(true);
   const [cantidad, setCantidad] = useState(1);
   const [mensajeVisible, setMensajeVisible] = useState(false);
+  const [mensajeErrorStock, setMensajeErrorStock] = useState('');
 
   useEffect(() => {
-    document.title = producto
-      ? `${producto.nombre} - LogisTrack Store`
-      : 'Producto no encontrado - LogisTrack Store';
-  }, [producto]);
+    let montado = true;
+    setCargando(true);
+
+    obtenerProductoPorSku(sku)
+      .then((data) => {
+        if (!montado) return;
+        setProducto(data);
+        document.title = data ? `${data.nombre} - LogisTrack Store` : 'Producto no encontrado';
+      })
+      .catch((err) => console.error('Error cargando detalle:', err))
+      .finally(() => {
+        if (montado) setCargando(false);
+      });
+
+    return () => { montado = false; };
+  }, [sku]);
+
+  if (cargando) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-primary" role="status"></div>
+        <p className="mt-2 text-muted">Consultando disponibilidad y stock en tiempo real...</p>
+      </div>
+    );
+  }
 
   if (!producto) {
     return (
@@ -30,11 +53,18 @@ function DetalleProducto() {
   }
 
   const precioFinal = calcularPrecioEfectivo(producto);
+  const stockReal = Number(producto.stock ?? 0);
+  const sinStock = stockReal <= 0;
 
-  const restar = () => setCantidad((actual) => Math.max(1, actual - 1));
-  const sumar = () => setCantidad((actual) => actual + 1);
+  const restar = () => setCantidad((act) => Math.max(1, act - 1));
+  const sumar = () => setCantidad((act) => Math.min(stockReal, act + 1));
 
   const handleAgregar = () => {
+    if (cantidad > stockReal) {
+      setMensajeErrorStock(`Solo hay ${stockReal} unidad(es) disponible(s) en bodega.`);
+      return;
+    }
+    setMensajeErrorStock('');
     agregarAlCarrito(producto, cantidad);
     setMensajeVisible(true);
     setTimeout(() => setMensajeVisible(false), 2500);
@@ -66,7 +96,19 @@ function DetalleProducto() {
       <div className="col-md-7">
         <span className="badge bg-navy mb-2">{producto.categoriaLabel}</span>
         <h1 className="h2 fw-bold text-navy">{producto.nombre}</h1>
-        <p className="text-muted">SKU: {producto.sku} · Stock disponible: {producto.stock} unidades</p>
+        
+        {/* Disponibilidad real en bodega consultada a inventory-service */}
+        <div className="d-flex align-items-center gap-2 mb-3">
+          <span className="text-muted">SKU: {producto.sku} ·</span>
+          {sinStock ? (
+            <span className="badge bg-danger">Agotado (0 unidades)</span>
+          ) : (
+            <span className={`badge ${stockReal <= (producto.stockCritico || 3) ? 'bg-warning text-dark' : 'bg-success'}`}>
+              Stock disponible: {stockReal} unidades
+            </span>
+          )}
+        </div>
+
         <p className="lead">{producto.descripcion}</p>
 
         {producto.oferta && producto.descuento > 0 ? (
@@ -82,25 +124,38 @@ function DetalleProducto() {
           <p className="display-6 fw-bold text-navy mb-4">{formatearCLP(producto.precio)}</p>
         )}
 
-        <div className="d-flex align-items-center gap-3 mb-4">
-          <label htmlFor="cantidad" className="form-label mb-0 fw-semibold">Cantidad</label>
-          <div className="input-group" style={{ width: '140px' }}>
-            <button className="btn btn-outline-secondary" type="button" onClick={restar}>-</button>
-            <input
-              type="number"
-              className="form-control text-center"
-              id="cantidad"
-              value={cantidad}
-              min="1"
-              onChange={(e) => setCantidad(Math.max(1, parseInt(e.target.value, 10) || 1))}
-            />
-            <button className="btn btn-outline-secondary" type="button" onClick={sumar}>+</button>
+        {!sinStock && (
+          <div className="d-flex align-items-center gap-3 mb-4">
+            <label htmlFor="cantidad" className="form-label mb-0 fw-semibold">Cantidad</label>
+            <div className="input-group" style={{ width: '140px' }}>
+              <button className="btn btn-outline-secondary" type="button" onClick={restar}>-</button>
+              <input
+                type="number"
+                className="form-control text-center"
+                id="cantidad"
+                value={cantidad}
+                min="1"
+                max={stockReal}
+                onChange={(e) => setCantidad(Math.max(1, Math.min(stockReal, parseInt(e.target.value, 10) || 1)))}
+              />
+              <button className="btn btn-outline-secondary" type="button" onClick={sumar}>+</button>
+            </div>
           </div>
-        </div>
+        )}
+
+        {mensajeErrorStock && (
+          <div className="alert alert-danger py-2 small mb-3">
+            <i className="bi bi-exclamation-circle me-1"></i> {mensajeErrorStock}
+          </div>
+        )}
 
         <div className="d-flex flex-wrap gap-2">
-          <button className="btn btn-brand btn-lg" onClick={handleAgregar}>
-            <i className="bi bi-cart-plus me-1"></i> Añadir al carrito
+          <button
+            className="btn btn-brand btn-lg"
+            onClick={handleAgregar}
+            disabled={sinStock}
+          >
+            <i className="bi bi-cart-plus me-1"></i> {sinStock ? 'Sin Stock' : 'Añadir al carrito'}
           </button>
           <Link to="/carrito" className="btn btn-outline-primary btn-lg">
             <i className="bi bi-cart3 me-1"></i> Ver carrito
