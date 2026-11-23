@@ -2,19 +2,41 @@ import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { contarItemsCarrito } from '../data/carrito';
 import { obtenerSesionActiva, cerrarSesionUsuario } from '../data/usuarios';
+import { estaAutenticado, obtenerUsuarioAutenticado, logout as logoutAuthService } from '../services/authService';
 
 function Header({ cantidadCarrito }) {
   const navigate = useNavigate();
   const [contador, setContador] = useState(() =>
     cantidadCarrito !== undefined ? cantidadCarrito : contarItemsCarrito()
   );
-  const [sesion, setSesion] = useState(() => obtenerSesionActiva());
+  const [sesion, setSesion] = useState(() => {
+    if (estaAutenticado()) {
+      const authUser = obtenerUsuarioAutenticado();
+      if (authUser) {
+        return {
+          nombre: authUser.nombre || authUser.username || 'Usuario',
+          rol: authUser.rolNormalizado || authUser.rol || 'Cliente'
+        };
+      }
+    }
+    return obtenerSesionActiva();
+  });
 
   useEffect(() => {
     const sincronizarCarrito = () => {
       setContador(contarItemsCarrito());
     };
     const sincronizarSesion = () => {
+      if (estaAutenticado()) {
+        const authUser = obtenerUsuarioAutenticado();
+        if (authUser) {
+          setSesion({
+            nombre: authUser.nombre || authUser.username || 'Usuario',
+            rol: authUser.rolNormalizado || authUser.rol || 'Cliente'
+          });
+          return;
+        }
+      }
       setSesion(obtenerSesionActiva());
     };
     const sincronizarTodo = () => {
@@ -25,17 +47,20 @@ function Header({ cantidadCarrito }) {
     window.addEventListener('logistrack_carrito_actualizado', sincronizarCarrito);
     window.addEventListener('logistrack_sesion_cambiada', sincronizarSesion);
     window.addEventListener('logistrack_rol_cambiado', sincronizarSesion);
+    window.addEventListener('logistrack_auth_cambiado', sincronizarSesion);
     window.addEventListener('storage', sincronizarTodo);
 
     return () => {
       window.removeEventListener('logistrack_carrito_actualizado', sincronizarCarrito);
       window.removeEventListener('logistrack_sesion_cambiada', sincronizarSesion);
       window.removeEventListener('logistrack_rol_cambiado', sincronizarSesion);
+      window.removeEventListener('logistrack_auth_cambiado', sincronizarSesion);
       window.removeEventListener('storage', sincronizarTodo);
     };
   }, []);
 
   const handleCerrarSesion = () => {
+    logoutAuthService();
     cerrarSesionUsuario();
     setSesion(null);
     navigate('/');

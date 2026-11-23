@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { autenticarUsuario } from '../data/usuarios';
+import { login as loginApi } from '../services/authService';
 import { esCorreoInstitucionalValido, esClaveValida } from '../utils/validaciones';
 
 function validarCampoLogin(campo, valores) {
@@ -75,7 +76,7 @@ function Login() {
     return `form-control ${errores[campo] ? 'is-invalid' : 'is-valid'}`;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const errorCorreo = validarCampoLogin('correo', valores);
@@ -93,29 +94,70 @@ function Login() {
       return;
     }
 
-    const resultado = autenticarUsuario(valores.correo, valores.clave);
-    if (!resultado.exito) {
-      setErrores((prev) => ({ ...prev, clave: resultado.error }));
-      setAlerta({
-        tipo: 'danger',
-        mensaje: resultado.error
-      });
-      return;
-    }
-
-    const { usuario } = resultado;
-    const destino =
-      usuario.rol === 'Administrador' || usuario.rol === 'Vendedor' ? '/admin' : '/';
-
     setEnviando(true);
-    setAlerta({
-      tipo: 'success',
-      mensaje: `¡Bienvenido/a, ${usuario.nombre}! Has iniciado sesión como ${usuario.rol}. Redirigiendo...`
-    });
+    setAlerta(null);
 
-    setTimeout(() => {
-      navigate(destino);
-    }, 900);
+    // 1. Intentar autenticación real contra Spring Boot (API Gateway /api/auth/login)
+    try {
+      const usernameInput = valores.correo.includes('@')
+        ? valores.correo.split('@')[0]
+        : valores.correo;
+
+      let resAuth = null;
+      try {
+        resAuth = await loginApi(valores.correo, valores.clave);
+      } catch (errApiEmail) {
+        // Si el backend espera username en vez de email, reintentar con username
+        if (usernameInput !== valores.correo) {
+          resAuth = await loginApi(usernameInput, valores.clave);
+        } else {
+          throw errApiEmail;
+        }
+      }
+
+      if (resAuth && resAuth.usuario) {
+        const { usuario, rol } = resAuth;
+        const nombreDisplay = usuario.nombre || usuario.username || 'Usuario';
+        const destino = rol === 'Administrador' || rol === 'Vendedor' ? '/admin' : '/';
+
+        setAlerta({
+          tipo: 'success',
+          mensaje: `¡Bienvenido/a, ${nombreDisplay}! Sesión iniciada con éxito vía API REST (${rol}). Redirigiendo...`
+        });
+
+        setTimeout(() => {
+          navigate(destino);
+        }, 900);
+        return;
+      }
+    } catch (errApi) {
+      console.warn('API REST no disponible o rechazó credenciales, verificando credenciales locales:', errApi.message);
+
+      // 2. Fallback a credenciales locales / demo si la API no está corriendo o responde error
+      const resultado = autenticarUsuario(valores.correo, valores.clave);
+      if (!resultado.exito) {
+        setEnviando(false);
+        setErrores((prev) => ({ ...prev, clave: errApi.message || resultado.error }));
+        setAlerta({
+          tipo: 'danger',
+          mensaje: errApi.message || resultado.error
+        });
+        return;
+      }
+
+      const { usuario } = resultado;
+      const destino =
+        usuario.rol === 'Administrador' || usuario.rol === 'Vendedor' ? '/admin' : '/';
+
+      setAlerta({
+        tipo: 'success',
+        mensaje: `¡Bienvenido/a, ${usuario.nombre}! Has iniciado sesión como ${usuario.rol}. Redirigiendo...`
+      });
+
+      setTimeout(() => {
+        navigate(destino);
+      }, 900);
+    }
   };
 
   const handleRecuperarClave = (e) => {
